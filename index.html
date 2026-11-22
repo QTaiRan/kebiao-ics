@@ -647,7 +647,8 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
         if (merge && z > a) lines.push('RRULE:FREQ=WEEKLY;COUNT=' + (z - a + 1));
         lines.push('SUMMARY:' + esc(b.name));
         if (b.room) lines.push('LOCATION:' + esc(b.room));
-        lines.push('DESCRIPTION:' + esc('教师：' + (b.teacher || '未标注')));
+        var wkLabel = (z > a) ? ('第' + a + '-' + z + '周') : ('第' + a + '周');
+        lines.push('DESCRIPTION:' + esc('教师：' + (b.teacher || '未标注') + '\n' + wkLabel));
         if (opts.reminderMinutes > 0) {
           lines.push('BEGIN:VALARM');
           lines.push('TRIGGER:-PT' + opts.reminderMinutes + 'M');
