@@ -618,6 +618,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
       'END:VTIMEZONE'
     ];
     var count = 0, skipped = 0, occurrences = 0, uidSeq = {};
+    var termKey = String(opts.termName || '').replace(/[\s\/]/g, '') || dateStr(base, 0);
 
     res.blocks.forEach(function (b) {
       var st = slotTime[b.slotFrom], en = slotTime[b.slotTo];
@@ -629,7 +630,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
         var dayOff = (a - 1) * 7 + b.wd;
         var ds = dateStr(base, dayOff);
         if (inSkip(ds)) { skipped += (z - a + 1); return; }
-        var keyBase = b.code + '|' + b.wd + '|' + b.slotFrom + '|' + (b.teacher || '');
+        var keyBase = termKey + '|' + b.code + '|' + b.wd + '|' + b.slotFrom + '|' + (b.teacher || '');
         var uid;
         if (!merge) {
           uid = 'kb-' + hash(keyBase + '|w' + a) + '@kb.local';
@@ -869,6 +870,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
     }
     var ics = KB.buildICS(state.res, state.res.slots, {
       termMonday: $('termMonday').value,
+      termName: state.term,
       merge: $('merge').checked,
       reminderMinutes: $('remind').checked ? parseInt($('remindMin').value, 10) : 0,
       calName: (state.term ? state.term + ' ' : '') + '课程表'
