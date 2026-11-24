@@ -239,7 +239,9 @@ button, .drop-zone, .tab { -webkit-tap-highlight-color: transparent; }
 .settings-group { min-width: 0; margin-top: 20px; }
 .field-label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 700; }
 .date-input, select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); outline: none; transition: border-color .2s, box-shadow .2s; }
-.date-input { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; height: 41px; margin: 0; padding: 0 11px; -webkit-appearance: none; appearance: none; }
+.date-input { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; height: 41px; margin: 0; padding: 9px 11px; line-height: 21px; -webkit-appearance: none; appearance: none; }
+.date-input::-webkit-datetime-edit { margin: 0; padding: 0; line-height: 21px; }
+.date-input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
 .date-input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus); }
 .field-hint { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .field-hint.notice { color: var(--amber); font-weight: 600; }
