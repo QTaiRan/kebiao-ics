@@ -238,11 +238,11 @@ button, .drop-zone, .tab { -webkit-tap-highlight-color: transparent; }
 
 .settings-group { min-width: 0; margin-top: 20px; }
 .field-label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 700; }
-.date-input, select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); outline: none; transition: border-color .2s, box-shadow .2s; }
-.date-input { display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; height: 41px; margin: 0; padding: 9px 11px; line-height: 21px; -webkit-appearance: none; appearance: none; }
-.date-input::-webkit-datetime-edit { margin: 0; padding: 0; line-height: 21px; }
-.date-input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
-.date-input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus); }
+select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); outline: none; transition: border-color .2s, box-shadow .2s; }
+.date-control { position: relative; width: 100%; min-width: 0; max-width: 100%; height: 41px; overflow: hidden; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); transition: border-color .2s, box-shadow .2s; }
+.date-input { position: absolute; inset: 0; z-index: 1; display: block; box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; outline: none; cursor: pointer; font-size: 16px; -webkit-appearance: none; appearance: none; }
+.date-display { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 11px; font-size: 14px; line-height: 21px; white-space: nowrap; pointer-events: none; }
+.date-control:focus-within, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus); }
 .field-hint { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .field-hint.notice { color: var(--amber); font-weight: 600; }
 .compact-group { padding-top: 4px; border-top: 1px solid var(--line); }
@@ -489,7 +489,10 @@ td:last-child, th:last-child { padding-right: 20px; }
 
         <div class="settings-group">
           <label class="field-label" for="first-monday">首周周一</label>
-          <input class="date-input" id="first-monday" type="date" value="2026-09-07">
+          <div class="date-control">
+            <span id="monday-display" class="date-display" aria-hidden="true">2026年9月7日</span>
+            <input class="date-input" id="first-monday" type="date" value="2026-09-07">
+          </div>
           <p id="monday-hint" class="field-hint">非周一自动吸附到当周周一。</p>
         </div>
 
@@ -1556,6 +1559,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     };
   }
 
+  function syncMondayDisplay() {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec($('first-monday').value);
+    $('monday-display').textContent = match ? Number(match[1]) + '年' + Number(match[2]) + '月' + Number(match[3]) + '日' : '选择日期';
+  }
+
   function processWorkbook() {
     if (!state.buffer || state.busy) return;
     clearError();
@@ -1636,6 +1644,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       $('monday-hint').textContent = '非周一自动吸附到当周周一。';
       $('monday-hint').classList.remove('notice');
     }
+    syncMondayDisplay();
     renderStats();
     renderNotices();
     renderWeekPreview();
@@ -2035,7 +2044,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var next = { auto: 'light', light: 'dark', dark: 'auto' };
       applyTheme(next[themeMode]);
     });
-    $('first-monday').addEventListener('change', processWorkbook);
+    $('first-monday').addEventListener('input', syncMondayDisplay);
+    $('first-monday').addEventListener('change', function () {
+      syncMondayDisplay();
+      processWorkbook();
+    });
     $('merge-toggle').addEventListener('change', processWorkbook);
     $('reminder-toggle').addEventListener('change', function () {
       $('reminder-minutes').disabled = !$('reminder-toggle').checked;
@@ -2058,6 +2071,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     $('first-monday').value = KB.DEFAULT_MONDAY;
+    syncMondayDisplay();
   }
 
   init();
