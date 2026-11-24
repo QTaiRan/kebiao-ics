@@ -238,7 +238,7 @@ button, .drop-zone, .tab { -webkit-tap-highlight-color: transparent; }
 
 .settings-group { margin-top: 20px; }
 .field-label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 700; }
-.date-input, select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); outline: none; transition: border-color .2s, box-shadow .2s; }
+.date-input, select { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; border: 1px solid var(--input-line); border-radius: 9px; background: var(--input); color: var(--ink); outline: none; transition: border-color .2s, box-shadow .2s; }
 .date-input { height: 41px; padding: 0 11px; }
 .date-input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus); }
 .field-hint { margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
@@ -299,7 +299,7 @@ button, .drop-zone, .tab { -webkit-tap-highlight-color: transparent; }
 .stat-card.has-conflict { border-color: var(--red-line); background: var(--red-soft); }
 .stat-card.has-conflict strong { color: var(--red); }
 
-.week-preview-panel { margin-top: 12px; padding: 17px 20px; }
+.week-picker { padding: 14px 20px 2px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
 .section-heading h3 { margin: 0; font-size: 14px; }
 .soft-badge { padding: 3px 8px; border-radius: 6px; background: var(--badge); color: var(--badge-ink); font-size: 10px; white-space: nowrap; }
@@ -354,7 +354,7 @@ td:last-child, th:last-child { padding-right: 20px; }
 .details-wrap thead { position: sticky; top: 0; z-index: 2; }
 .detail-time { color: var(--muted); font-size: 9px; white-space: nowrap; }
 
-.week-toolbar { padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.week-toolbar { padding: 12px 20px 10px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .week-toolbar h3 { margin: 0; font-size: 15px; }
 .week-toolbar p { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
 .week-empty { margin: 0 16px 12px; padding: 9px 12px; border-radius: 8px; background: var(--badge); color: var(--muted); font-size: 10px; }
@@ -417,6 +417,7 @@ td:last-child, th:last-child { padding-right: 20px; }
   .result-actions { flex-direction: column; margin-top: 15px; }
   .result-actions > .button, .calendar-action { width: 100%; }
   .platform-hint { width: 100%; }
+  .week-picker { padding: 13px 12px 2px; }
   .week-preview { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .tabs { gap: 22px; padding: 0 14px; }
   .check-list { grid-template-columns: 1fr; }
@@ -449,7 +450,7 @@ td:last-child, th:last-child { padding-right: 20px; }
 }
 
 @media print {
-  .topbar, .hero, .settings-panel, .result-actions, .tabs, .week-preview-panel, .anomaly-panel { display: none !important; }
+  .topbar, .hero, .settings-panel, .result-actions, .tabs, .week-picker, .anomaly-panel { display: none !important; }
   .workspace { display: block; }
   .panel { box-shadow: none; }
 }
@@ -556,11 +557,6 @@ td:last-child, th:last-child { padding-right: 20px; }
             <article class="stat-card" id="conflict-card"><span class="stat-label">时间冲突</span><strong id="stat-conflicts">0</strong><small>保留事件，不强行合并</small></article>
           </section>
 
-          <section class="panel week-preview-panel">
-            <div class="section-heading"><h3>周次预览</h3><span id="week-range-label" class="soft-badge"></span></div>
-            <div id="week-preview" class="week-preview"></div>
-          </section>
-
           <section class="panel data-panel">
             <div class="tabs" role="tablist" aria-label="课表预览">
               <button class="tab active" data-tab="courses" role="tab" aria-selected="true">课程汇总</button>
@@ -580,6 +576,10 @@ td:last-child, th:last-child { padding-right: 20px; }
             </div>
 
             <div id="tab-week" class="tab-panel" hidden>
+              <div class="week-picker">
+                <div class="section-heading"><h3>选择周次</h3><span id="week-range-label" class="soft-badge"></span></div>
+                <div id="week-preview" class="week-preview"></div>
+              </div>
               <div class="week-toolbar"><div><h3 id="week-title">第 1 周</h3><p id="week-dates"></p></div><button id="png-button" class="button secondary small" type="button">导出 PNG</button></div>
               <div id="week-empty" class="week-empty" hidden>这一周没有课，可以切换其他周次。</div>
               <div class="week-scroll">
