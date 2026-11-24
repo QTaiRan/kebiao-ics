@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>使用说明 · 课表日历</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f5f8;
+    --panel: #ffffff;
+    --ink: #15151c;
+    --ink-soft: #52525f;
+    --muted: #7c7c89;
+    --line: #e3e3ea;
+    --primary: #6c5ce7;
+    --primary-soft: #efecff;
+    --shadow: 0 10px 28px rgba(24, 24, 40, .07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #101014;
+      --panel: #191920;
+      --ink: #f2f2f6;
+      --ink-soft: #b6b6c4;
+      --muted: #8a8a99;
+      --line: #2b2b36;
+      --primary: #8f83ff;
+      --primary-soft: #24203c;
+      --shadow: 0 10px 28px rgba(0, 0, 0, .45);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.7 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .bar {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; padding: 0 20px;
+    background: color-mix(in srgb, var(--panel) 86%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar strong { font-size: 15px; letter-spacing: -.02em; }
+  .bar a {
+    color: var(--ink-soft); text-decoration: none; font-size: 13px;
+    border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 18px 64px; }
+  h1 { margin: 6px 0 6px; font-size: 26px; letter-spacing: -.03em; }
+  .lead { margin: 0 0 22px; color: var(--muted); }
+  .step {
+    position: relative;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px 20px 22px; margin: 0 0 16px; box-shadow: var(--shadow);
+  }
+  .num {
+    display: inline-grid; place-items: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 14px;
+    margin-bottom: 8px;
+  }
+  h2 { margin: 4px 0 10px; font-size: 18px; letter-spacing: -.02em; }
+  p { margin: 8px 0; color: var(--ink-soft); }
+  ul { margin: 8px 0 0; padding-left: 20px; color: var(--ink-soft); }
+  li { margin: 4px 0; }
+  img { display: block; width: 100%; height: auto; margin: 14px 0 6px; border-radius: 14px; border: 1px solid var(--line); }
+  .note { font-size: 12.5px; color: var(--muted); }
+  .mock {
+    margin: 14px 0 8px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    background: var(--bg);
+  }
+  .mock-bar {
+    padding: 8px 12px; font-size: 12px; color: var(--ink-soft);
+    background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .mock-body { position: relative; height: 132px; padding: 14px; }
+  .mock-table { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; opacity: .55; }
+  .mock-cell { height: 26px; border-radius: 5px; background: var(--primary-soft); }
+  .mock-cell:nth-child(3n) { background: var(--line); }
+  .mock-btn {
+    position: absolute; right: 14px; top: 12px;
+    padding: 5px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    color: #fff; background: var(--primary);
+    box-shadow: 0 0 0 3px rgba(226, 58, 58, .18), 0 0 0 2px #e23a3a;
+  }
+  .tip {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; margin: 0 0 16px;
+  }
+  .tip h3 { margin: 0 0 8px; font-size: 16px; }
+  h2.faq-title { margin: 26px 0 12px; font-size: 20px; }
+  dl { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 6px 20px; margin: 0; }
+  dt { font-weight: 650; margin-top: 16px; }
+  dd { margin: 4px 0 16px; color: var(--ink-soft); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 16px 40px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="bar"><strong>课表日历 · 使用说明</strong><a href="./index.html">回到工具</a></div>
+<main>
+  <h1>使用说明</h1>
+  <p class="lead">从教务系统的课表，到手机日历里的日程，一共五步。</p>
+
+  <section class="step">
+    <div class="num">1</div>
+    <h2>打开教务系统，导出课表</h2>
+    <p>用浏览器打开 <b>szjw.cdu.edu.cn</b>，用学校账号登录，进入「我的课表」。页面上一般有个「导出」或「导出课表」按钮，点一下把课表存成 xls 文件。</p>
+    <div class="mock">
+      <div class="mock-bar">教务系统 · 我的课表</div>
+      <div class="mock-body">
+        <div class="mock-table"><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i></div>
+        <div class="mock-btn">导出</div>
+      </div>
+    </div>
+    <p class="note">示意图。按钮实际叫什么、在哪个角落，以你登录后看到的页面为准。</p>
+  </section>
+
+  <section class="step">
+    <div class="num">2</div>
+    <h2>把文件拖进网页</h2>
+    <p>回到工具页，把刚导出的 xls 拖进红框里的上传区；手机上没有拖拽，点一下那块区域选文件就行。导入后「01 导入与设置」里会显示文件名和大小。</p>
+    <img src="guide-img/guide-1-drop.png" alt="上传区与首周周一的位置">
+    <p class="note">红框 ① 是上传区，红框 ② 是首周周一。</p>
+  </section>
+
+  <section class="step">
+    <div class="num">3</div>
+    <h2>核对首周周一</h2>
+    <p>默认是 2026 年 9 月 7 日。开学第一周如果不从这天开始，点日期框改一下；选了非周一的日期，会自动吸附到那一周的周一，下面会出一行提示。</p>
+    <p>顺手看一眼统计：这门课表应该是 17 门课、46 个课时块、225 个日历事件、0 个冲突。数字对得上再往下走。</p>
+  </section>
+
+  <section class="step">
+    <div class="num">4</div>
+    <h2>导出日历</h2>
+    <p>电脑上点「下载 .ics」，双击文件用日历打开；iPhone 和 Mac 点「添加到日历」，会直接弹系统日历的导入界面。</p>
+    <img src="guide-img/guide-2-result.png" alt="下载与添加到日历按钮">
+    <p class="note">iPhone 上如果打开后只看到一串文字、没有弹出日历，就改用「下载 .ics」，再去「文件」里点开。</p>
+  </section>
+
+  <section class="step">
+    <div class="num">5</div>
+    <h2>在手机上导入</h2>
+    <ul>
+      <li>iPhone：下载后在「文件」App 里找到 .ics，点一下，选「添加到日历」。</li>
+      <li>安卓：下载后在文件管理器或浏览器下载列表里点开，选择用系统「日历」打开。</li>
+      <li>导入后打开日历，随便点一节课，核对上课时间、地点和提醒。</li>
+    </ul>
+  </section>
+
+  <section class="tip">
+    <h3>不确定排得对不对？先看周视图</h3>
+    <p>点「周视图」，再点第几周，那一周的课表就按七天排在一屏里。切换周次就能检查单双周、前半学期后半学期有没有错。</p>
+    <img src="guide-img/guide-3-week.png" alt="周视图与周次选择">
+  </section>
+
+  <h2 class="faq-title">常见问题</h2>
+  <dl>
+    <dt>导入后日历里出现两份课表？</dt>
+    <dd>先把上一版删掉再导入。同一份表重复导入会叠加，不会自动覆盖。</dd>
+    <dt>「需要留意」提示地点为空？</dt>
+    <dd>教务表里那一格本来就没写地点，日历照常生成，只是地点空着。</dd>
+    <dt>时间冲突是什么？</dt>
+    <dd>同一时间排了两门课。工具不会强行合并，会单独列出来让你核对。</dd>
+    <dt>课表会被上传吗？</dt>
+    <dd>不会。解析和生成都在你自己的浏览器里完成，页面不联网，也不保存数据。</dd>
+    <dt>换学期要改什么？</dt>
+    <dd>改「首周周一」就行，周次会按 17 周重新往后排。</dd>
+  </dl>
+</main>
+<footer>课表日历 · <a href="./index.html">回到工具</a></footer>
+</body>
+</html>

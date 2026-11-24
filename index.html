@@ -211,6 +211,9 @@ button, .drop-zone, .tab { -webkit-tap-highlight-color: transparent; }
 .theme-toggle:hover { background: var(--row-hover); }
 .theme-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .theme-toggle svg .filled { fill: currentColor; stroke: none; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.help-link { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink-soft); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.help-link:hover { background: var(--row-hover); color: var(--ink); }
 
 .page-shell { width: min(1420px, calc(100% - 56px)); max-width: 100%; margin: 0 auto; }
 .hero { padding: 34px 4px 30px; }
@@ -465,7 +468,10 @@ td:last-child, th:last-child { padding-right: 20px; }
       <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
       <span>课表日历</span>
     </a>
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="主题：自动" title="主题：自动"></button>
+    <div class="topbar-actions">
+      <a class="help-link" href="guide.html" target="_blank" rel="noopener">使用说明</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="主题：自动" title="主题：自动"></button>
+    </div>
   </header>
 
   <main class="page-shell">
