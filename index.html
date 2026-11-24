@@ -510,14 +510,6 @@ td:last-child, th:last-child { padding-right: 20px; }
               <option value="30">30 分钟</option>
             </select>
           </div>
-          <div class="mode-row">
-            <label for="calendar-mode">日历形式</label>
-            <select id="calendar-mode">
-              <option value="expanded" selected>逐周展开 · 兼容性最佳</option>
-              <option value="recurring">重复规则 · 事件更少</option>
-            </select>
-          </div>
-          <p class="mode-note">部分国产日历（小米、华为）对 EXDATE 支持不稳。</p>
         </div>
       </aside>
 
@@ -1556,7 +1548,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return {
       firstMonday: $('first-monday').value || KB.DEFAULT_MONDAY,
       merge: $('merge-toggle').checked,
-      mode: $('calendar-mode').value,
+      mode: 'expanded',
       reminder: $('reminder-toggle').checked,
       reminderMinutes: Number($('reminder-minutes').value)
     };
@@ -2043,7 +2035,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     $('first-monday').addEventListener('change', processWorkbook);
     $('merge-toggle').addEventListener('change', processWorkbook);
-    $('calendar-mode').addEventListener('change', regenerateCalendar);
     $('reminder-toggle').addEventListener('change', function () {
       $('reminder-minutes').disabled = !$('reminder-toggle').checked;
       regenerateCalendar();
