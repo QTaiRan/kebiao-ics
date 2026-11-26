@@ -5,6 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>使用说明 · 课表日历</title>
+<script>
+(function () {
+  var mode = 'auto';
+  var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function apply() {
+    var dark = mode === 'dark' || (mode === 'auto' && media && media.matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme-mode', mode);
+  }
+  try { mode = localStorage.getItem('kb-theme') || 'auto'; } catch (_) {}
+  apply();
+  try {
+    window.addEventListener('storage', function (e) {
+      if (e.key !== 'kb-theme') return;
+      mode = e.newValue || 'auto';
+      apply();
+    });
+  } catch (_) {}
+  if (media && media.addEventListener) {
+    media.addEventListener('change', function () { if (mode === 'auto') apply(); });
+  }
+}());
+</script>
 <style>
   :root {
     color-scheme: light;
@@ -19,7 +42,7 @@
     --shadow: 0 10px 28px rgba(24, 24, 40, .07);
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
       color-scheme: dark;
       --bg: #101014;
       --panel: #191920;
@@ -31,6 +54,18 @@
       --primary-soft: #24203c;
       --shadow: 0 10px 28px rgba(0, 0, 0, .45);
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #101014;
+    --panel: #191920;
+    --ink: #f2f2f6;
+    --ink-soft: #b6b6c4;
+    --muted: #8a8a99;
+    --line: #2b2b36;
+    --primary: #8f83ff;
+    --primary-soft: #24203c;
+    --shadow: 0 10px 28px rgba(0, 0, 0, .45);
   }
   * { box-sizing: border-box; }
   body {
