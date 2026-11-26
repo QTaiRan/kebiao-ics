@@ -329,6 +329,39 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .stat-card.has-conflict { border-color: var(--red-line); background: var(--red-soft); }
 .stat-card.has-conflict strong { color: var(--red); }
 
+.semester-summary { min-width: 0; padding: 21px 20px 18px; }
+.summary-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.summary-header h3 { margin: 0; font-size: 15px; letter-spacing: -.015em; }
+.summary-header p { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "duration duration days"
+    "early evening average"
+    "rooms rooms latest";
+  gap: 10px;
+  margin-top: 15px;
+}
+.summary-card { min-width: 0; padding: 14px 15px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--panel-subtle); }
+.summary-card.duration { grid-area: duration; }
+.summary-card.days { grid-area: days; }
+.summary-card.early { grid-area: early; }
+.summary-card.evening { grid-area: evening; }
+.summary-card.average { grid-area: average; }
+.summary-card.rooms { grid-area: rooms; }
+.summary-card.latest { grid-area: latest; }
+.summary-label { display: block; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.summary-card strong { display: block; margin-top: 5px; color: var(--ink); font-size: 25px; line-height: 1.25; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.summary-card strong em { margin-left: 3px; color: var(--muted); font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: 0; }
+.summary-card.duration strong { font-size: 26px; }
+.summary-card.average strong, .summary-card.latest strong { font-size: 20px; }
+.summary-card small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.room-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.room-chip { max-width: 100%; padding: 3px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted-strong); font-size: 9px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.summary-empty { color: var(--muted); font-size: 9px; }
+.summary-foot { margin: 12px 1px 0; color: var(--muted); font-size: 9px; }
+
 .week-picker { padding: 14px 20px 2px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
 .section-heading h3 { margin: 0; font-size: 14px; }
@@ -465,6 +498,20 @@ td:last-child, th:last-child { padding-right: 20px; }
   .stats-grid { gap: 8px; }
   .stat-card { padding: 14px; }
   .stat-card strong { font-size: 26px; }
+  .semester-summary { padding: 17px 14px 15px; }
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "duration duration"
+      "days early"
+      "evening average"
+      "rooms rooms"
+      "latest latest";
+    gap: 8px;
+  }
+  .summary-card { padding: 12px; }
+  .summary-card.duration strong { font-size: 23px; }
+  .summary-card strong { font-size: 22px; }
   .week-preview { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .tabs { gap: 20px; padding: 0 12px; }
   .week-toolbar { padding: 14px 12px 10px; }
@@ -601,8 +648,50 @@ td:last-child, th:last-child { padding-right: 20px; }
             </div>
 
             <div id="tab-courses" class="tab-panel">
-              <div class="table-caption"><span id="courses-count"></span></div>
-              <div class="table-wrap"><table><thead><tr><th>课程名</th><th>教师</th><th>地点</th><th>周次</th><th class="number-cell">块数</th></tr></thead><tbody id="courses-body"></tbody></table></div>
+              <div class="semester-summary">
+                <div class="summary-header">
+                  <div><h3>课时统计</h3><p id="summary-range"></p></div>
+                  <span id="summary-instances" class="soft-badge"></span>
+                </div>
+                <div class="summary-grid">
+                  <article class="summary-card duration">
+                    <span class="summary-label">本学期总上课时长</span>
+                    <strong id="summary-duration">0 小时 0 分钟</strong>
+                    <small>按实际节次时长累计，课间不计</small>
+                  </article>
+                  <article class="summary-card days">
+                    <span class="summary-label">上课天数</span>
+                    <strong><span id="summary-days">0</span><em>天</em></strong>
+                    <small id="summary-days-rate"></small>
+                  </article>
+                  <article class="summary-card early">
+                    <span class="summary-label">早八</span>
+                    <strong><span id="summary-early-days">0</span><em>天</em></strong>
+                    <small id="summary-early-rate"></small>
+                  </article>
+                  <article class="summary-card evening">
+                    <span class="summary-label">晚课</span>
+                    <strong><span id="summary-evening-days">0</span><em>天</em></strong>
+                    <small id="summary-evening-rate"></small>
+                  </article>
+                  <article class="summary-card average">
+                    <span class="summary-label">日均上课</span>
+                    <strong id="summary-average">0 分钟</strong>
+                    <small>平均每个有课日</small>
+                  </article>
+                  <article class="summary-card rooms">
+                    <span class="summary-label">教室数</span>
+                    <strong><span id="summary-rooms">0</span><em>间</em></strong>
+                    <div id="summary-room-list" class="room-list"></div>
+                  </article>
+                  <article class="summary-card latest">
+                    <span class="summary-label">最晚下课</span>
+                    <strong id="summary-latest">—</strong>
+                    <small id="summary-earliest"></small>
+                  </article>
+                </div>
+                <p class="summary-foot">仅统计课程，自习不计；在线教学不计教室；同一天多门课只算一天。</p>
+              </div>
             </div>
 
             <div id="tab-details" class="tab-panel" hidden>
@@ -1022,6 +1111,68 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     }
     return conflicts;
+  }
+
+  function isPhysicalRoom(location) {
+    var room = text(location).trim();
+    return !!room && !/^(在线|线上|网络)(教学|课堂|授课)$/.test(compact(room));
+  }
+
+  function summarizeSemester(result, firstMonday) {
+    var mondayInfo = normalizeMonday(firstMonday || result.firstMonday || DEFAULT_MONDAY);
+    var monday = parseDateOnly(mondayInfo.date);
+    var blocks = (result.blocks || []).filter(function (b) { return !b.selfStudy; });
+    var dayDates = new Set();
+    var earlyDates = new Set();
+    var eveningDates = new Set();
+    var roomVisits = new Map();
+    var periodMinutes = new Map(result.periods.map(function (p) { return [p.n, minutes(p.end) - minutes(p.start)]; }));
+    var totalMinutes = 0;
+    var earliestStart = '';
+    var latestEnd = '';
+    blocks.forEach(function (block) {
+      var duration = 0;
+      for (var period = block.startPeriod; period <= block.endPeriod; period++) {
+        duration += Math.max(0, periodMinutes.get(period) || 0);
+      }
+      if (!duration) duration = Math.max(0, minutes(block.end) - minutes(block.start));
+      totalMinutes += duration * block.weeks.length;
+      if (!earliestStart || minutes(block.start) < minutes(earliestStart)) earliestStart = block.start;
+      if (!latestEnd || minutes(block.end) > minutes(latestEnd)) latestEnd = block.end;
+      var room = text(block.location).trim();
+      if (isPhysicalRoom(room)) roomVisits.set(room, (roomVisits.get(room) || 0) + block.weeks.length);
+      block.weeks.forEach(function (week) {
+        var date = isoDate(addDays(monday, (week - 1) * 7 + block.day));
+        dayDates.add(date);
+        if (block.startPeriod === 1) earlyDates.add(date);
+        if (block.endPeriod >= 9) eveningDates.add(date);
+      });
+    });
+    var classDays = dayDates.size;
+    var totalDays = Math.max(0, Number(result.maxWeek) || 0) * 7;
+    function rate(part, total) { return total ? Math.round(part / total * 1000) / 10 : 0; }
+    var rooms = Array.from(roomVisits.entries()).map(function (entry) {
+      return { name: entry[0], visits: entry[1] };
+    }).sort(function (a, b) {
+      return b.visits - a.visits || a.name.localeCompare(b.name, 'zh-CN');
+    });
+    return {
+      totalMinutes: totalMinutes,
+      classDays: classDays,
+      totalDays: totalDays,
+      classDayRate: rate(classDays, totalDays),
+      rooms: rooms,
+      roomCount: rooms.length,
+      earlyDays: earlyDates.size,
+      earlyRate: rate(earlyDates.size, classDays),
+      eveningDays: eveningDates.size,
+      eveningRate: rate(eveningDates.size, classDays),
+      averageMinutes: classDays ? Math.round(totalMinutes / classDays) : 0,
+      earliestStart: earliestStart,
+      latestEnd: latestEnd,
+      instanceCount: blocks.reduce(function (sum, b) { return sum + b.weeks.length; }, 0),
+      maxWeek: Number(result.maxWeek) || 0
+    };
   }
 
   function recalculateResult(result) {
@@ -1639,6 +1790,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     parseWorkbook: parseWorkbook,
     updateBlock: updateBlock,
     recalculateResult: recalculateResult,
+    summarizeSemester: summarizeSemester,
     createSelfStudyBlocks: createSelfStudyBlocks,
     buildCalendar: buildCalendar,
     generateICS: generateICS,
@@ -1880,7 +2032,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     renderStats();
     renderNotices();
     renderWeekPreview();
-    renderCourses();
+    renderSemesterSummary();
     renderDetails();
     renderWeekView();
     renderChecks();
@@ -1940,12 +2092,35 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
 
-  function renderCourses() {
-    var courses = state.result.courses;
-    $('courses-count').textContent = courses.length + ' 门课';
-    $('courses-body').innerHTML = courses.map(function (course) {
-      return '<tr><td><span class="course-name">' + escapeHTML(course.name) + '</span>' + (course.code ? '<span class="course-code">' + escapeHTML(course.code) + '</span>' : '') + '</td><td>' + escapeHTML(course.teachers.join('、') || '—') + '</td><td>' + (course.locations.length ? escapeHTML(course.locations.join('、')) : '<span class="location-missing">未填写</span>') + '</td><td>' + escapeHTML(KB.formatWeeks(course.weeks)) + '</td><td class="number-cell"><span class="block-count">' + course.blocks + '</span></td></tr>';
-    }).join('');
+  function formatSummaryMinutes(value) {
+    var total = Math.max(0, Math.round(Number(value) || 0));
+    return Math.floor(total / 60) + ' 小时 ' + (total % 60) + ' 分钟';
+  }
+
+  function formatSummaryRate(value) {
+    var number = Math.round((Number(value) || 0) * 10) / 10;
+    return (Number.isInteger(number) ? number : number.toFixed(1)) + '%';
+  }
+
+  function renderSemesterSummary() {
+    if (!state.result || !state.calendar) return;
+    var summary = KB.summarizeSemester(state.result, state.calendar.firstMonday);
+    $('summary-range').textContent = (summary.maxWeek > 1 ? '第 1–' + summary.maxWeek + ' 周' : '第 1 周');
+    $('summary-instances').textContent = summary.instanceCount + ' 个课程实例';
+    $('summary-duration').textContent = formatSummaryMinutes(summary.totalMinutes);
+    $('summary-days').textContent = summary.classDays;
+    $('summary-days-rate').textContent = '共 ' + summary.totalDays + ' 天，占 ' + formatSummaryRate(summary.classDayRate);
+    $('summary-rooms').textContent = summary.roomCount;
+    $('summary-room-list').innerHTML = summary.rooms.length ? summary.rooms.map(function (room) {
+      return '<span class="room-chip" title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
+    }).join('') : '<span class="summary-empty">暂无教室信息</span>';
+    $('summary-early-days').textContent = summary.earlyDays;
+    $('summary-early-rate').textContent = '占 ' + summary.classDays + ' 个有课日的 ' + formatSummaryRate(summary.earlyRate);
+    $('summary-evening-days').textContent = summary.eveningDays;
+    $('summary-evening-rate').textContent = '占 ' + summary.classDays + ' 个有课日的 ' + formatSummaryRate(summary.eveningRate);
+    $('summary-average').textContent = formatSummaryMinutes(summary.averageMinutes);
+    $('summary-latest').textContent = summary.latestEnd || '—';
+    $('summary-earliest').textContent = summary.earliestStart ? '最早 ' + summary.earliestStart + ' 开始' : '暂无课程';
   }
 
   function renderDetails() {
