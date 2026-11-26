@@ -72,24 +72,16 @@
   li { margin: 4px 0; }
   img { display: block; width: 100%; height: auto; margin: 14px 0 6px; border-radius: 14px; border: 1px solid var(--line); }
   .note { font-size: 12.5px; color: var(--muted); }
-  .mock {
-    margin: 14px 0 8px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-    background: var(--bg);
+  .shots { display: grid; gap: 10px; margin: 14px 0 6px; }
+  .shot {
+    margin: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--bg); text-align: center;
   }
-  .mock-bar {
-    padding: 8px 12px; font-size: 12px; color: var(--ink-soft);
-    background: var(--panel); border-bottom: 1px solid var(--line);
-  }
-  .mock-body { position: relative; height: 132px; padding: 14px; }
-  .mock-table { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; opacity: .55; }
-  .mock-cell { height: 26px; border-radius: 5px; background: var(--primary-soft); }
-  .mock-cell:nth-child(3n) { background: var(--line); }
-  .mock-btn {
-    position: absolute; right: 14px; top: 12px;
-    padding: 5px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    color: #fff; background: var(--primary);
-    box-shadow: 0 0 0 3px rgba(226, 58, 58, .18), 0 0 0 2px #e23a3a;
-  }
+  .shot img { margin: 0 auto; width: auto; max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+  .shot.menu img { max-width: 235px; }
+  .shot.mid img { max-width: 340px; }
+  .shot.dialog img { max-width: 480px; }
+  .shot figcaption { margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--muted); text-align: left; }
   .tip {
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
     padding: 20px; margin: 0 0 16px;
@@ -112,15 +104,26 @@
   <section class="step">
     <div class="num">1</div>
     <h2>打开教务系统，导出课表</h2>
-    <p>用浏览器打开 <b>szjw.cdu.edu.cn</b>，用学校账号登录，进入「我的课表」。页面上一般有个「导出」或「导出课表」按钮，点一下把课表存成 xls 文件。</p>
-    <div class="mock">
-      <div class="mock-bar">教务系统 · 我的课表</div>
-      <div class="mock-body">
-        <div class="mock-table"><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i><i class="mock-cell"></i></div>
-        <div class="mock-btn">导出</div>
-      </div>
+    <p>用浏览器打开 <b>szjw.cdu.edu.cn</b>，用学校账号登录，然后按下面四张实拍图的顺序操作：左侧菜单点「我的课表」→ 选好「学年学期 / 上课校区」，点「打印」→ 在打印报表页面点「导出Excel」→ 选 <b>xls</b>、<b>不分页</b>，点「确定」。</p>
+    <div class="shots">
+      <figure class="shot menu">
+        <img src="guide-img/guide-1a-menu.png" alt="教务系统左侧菜单，「我的课表」旁画了红勾">
+        <figcaption>① 左侧菜单点「我的课表」</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="guide-img/guide-1b-print.png" alt="选好学年学期与上课校区后点「打印」">
+        <figcaption>② 选好学年学期和上课校区，点「打印」</figcaption>
+      </figure>
+      <figure class="shot mid">
+        <img src="guide-img/guide-1c-export.png" alt="打印报表页面工具栏，鼠标停在「导出Excel」">
+        <figcaption>③ 在打印报表页面点「导出Excel」</figcaption>
+      </figure>
+      <figure class="shot dialog">
+        <img src="guide-img/guide-1d-format.png" alt="导出Excel设置：xls、不分页、不导出公式">
+        <figcaption>④ 选 xls、不分页，点「确定」</figcaption>
+      </figure>
     </div>
-    <p class="note">示意图。按钮实际叫什么、在哪个角落，以你登录后看到的页面为准。</p>
+    <p class="note">按图里的选项来：格式选 xls、分页方式选不分页，不要勾「是否导出公式」。导出的文件就是 xskb.xls。</p>
   </section>
 
   <section class="step">
