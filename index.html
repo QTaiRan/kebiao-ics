@@ -2519,7 +2519,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   var pngCardProfiles = {
     wide: {
-      padX: 16, padY: 9, radius: 10, compactHeight: 92,
+      padX: 16, padY: 9, radius: 10, compactHeight: 92, centerRatio: .5,
       nameMax: 28, nameMin: 16, compactNameMax: 20,
       sectionSize: 13, roomSize: 15, roomMin: 11,
       chipPadX: 9, chipHeight: 26, lineHeight: 1.24,
@@ -2527,7 +2527,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       compactPadY: 7, compactRoomSize: 13, compactChipHeight: 22, compactGapRoom: 4
     },
     phone: {
-      padX: 12, padY: 10, radius: 9, compactHeight: 188,
+      padX: 12, padY: 10, radius: 9, compactHeight: 188, centerRatio: .382,
       nameMax: 26, nameMin: 15, compactNameMax: 22,
       sectionSize: 11, roomSize: 13, roomMin: 10,
       chipPadX: 8, chipHeight: 23, lineHeight: 1.22,
@@ -2648,7 +2648,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       + (section ? profile.gapSection + sectionHeight : 0)
       + (roomText ? gapRoom + roomHeight : 0);
 
-    var top = y + Math.max(padY, (h - totalHeight) / 2);
+    var centerY = y + h * (profile.centerRatio || .5);
+    var top = centerY - totalHeight / 2;
+    top = Math.max(y + padY, Math.min(y + h - padY - totalHeight, top));
     ctx.save();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
