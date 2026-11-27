@@ -2491,6 +2491,65 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.closePath();
   }
 
+  function countWrappedLines(ctx, value, maxWidth) {
+    var chars = String(value || '').split('');
+    var line = '';
+    var count = 0;
+    chars.forEach(function (ch) {
+      if (ctx.measureText(line + ch).width > maxWidth && line) {
+        count++;
+        line = ch;
+      } else {
+        line += ch;
+      }
+    });
+    if (line) count++;
+    return Math.max(1, count);
+  }
+
+  function fitFontSize(ctx, value, maxWidth, maxLines, maxSize, minSize, weight) {
+    var size = maxSize;
+    while (size >= minSize) {
+      ctx.font = (weight || 600) + ' ' + size + 'px "Microsoft YaHei", sans-serif';
+      if (countWrappedLines(ctx, value, maxWidth) <= maxLines) return size;
+      size--;
+    }
+    return minSize;
+  }
+
+  function courseNameParts(value) {
+    var s = String(value || '').trim();
+    var idx = s.search(/[（(]/);
+    if (idx <= 0) return [s];
+    var prefix = s.slice(0, idx).trim();
+    var suffix = s.slice(idx).trim();
+    if (prefix.length > 6) {
+      return [prefix.slice(0, 4), prefix.slice(4) + suffix];
+    }
+    return [prefix, suffix];
+  }
+
+  function drawCourseName(ctx, value, x, y, maxWidth, maxLines, maxSize, minSize) {
+    var parts = courseNameParts(value);
+    if (parts.length > 1) {
+      var size = maxSize;
+      parts.forEach(function (part) {
+        size = Math.min(size, fitFontSize(ctx, part, maxWidth, 1, maxSize, minSize, 600));
+      });
+      ctx.font = '600 ' + size + 'px "Microsoft YaHei", sans-serif';
+      parts.forEach(function (line, index) {
+        ctx.fillText(line, x, y + index * size * 1.15);
+      });
+      return size;
+    }
+    var oneLine = String(value || '').length <= 5;
+    var linesAllowed = oneLine ? 1 : maxLines;
+    var oneSize = fitFontSize(ctx, value, maxWidth, linesAllowed, maxSize, minSize, 600);
+    ctx.font = '600 ' + oneSize + 'px "Microsoft YaHei", sans-serif';
+    canvasText(ctx, value, x, y, maxWidth, linesAllowed, oneSize * 1.15);
+    return oneSize;
+  }
+
   function canvasText(ctx, value, x, y, maxWidth, maxLines, lineHeight) {
     var chars = String(value || '').split('');
     var line = '';
@@ -2577,9 +2636,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     periods.forEach(function (p, index) {
       var center = bodyTop + index * rowHeight + rowHeight / 2;
-      ctx.fillStyle = pngColors.time; ctx.font = '600 13px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = pngColors.time; ctx.font = '600 14px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 7);
-      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '11px sans-serif';
+      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '12px sans-serif';
       ctx.fillText(p.start, margin + timeWidth / 2, center + 10);
       ctx.fillText(p.end, margin + timeWidth / 2, center + 24);
       ctx.textAlign = 'left';
@@ -2600,12 +2659,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var h = (endIndex - startIndex + 1) * rowHeight - 8;
         ctx.fillStyle = colors[1]; roundedRect(ctx, x, y, w, h, 7); ctx.fill();
         ctx.fillStyle = colors[0]; roundedRect(ctx, x, y, 4, h, 2); ctx.fill();
-        ctx.fillStyle = pngColors.eventText; ctx.font = '600 18px "Microsoft YaHei", sans-serif';
-        var nameLines = Math.max(1, Math.min(3, Math.floor((h - 30) / 22)));
-        var nameRows = canvasText(ctx, event.name, x + 12, y + 24, w - 20, nameLines, 22);
-        var metaY = y + 24 + nameRows * 22;
-        ctx.fillStyle = pngColors.eventSecondary; ctx.font = '11px sans-serif'; ctx.fillText(event.start + '–' + event.end, x + 12, metaY);
-        ctx.font = '11px "Microsoft YaHei", sans-serif'; canvasText(ctx, event.location || event.teacher, x + 12, metaY + 15, w - 20, 1, 12);
+        var compact = h < 100;
+        var maxNameWidth = w - 24;
+        ctx.fillStyle = pngColors.eventText;
+        drawCourseName(ctx, event.name, x + 12, y + 22, maxNameWidth, compact ? 1 : 2, compact ? 26 : 34, 18);
+        var roomText = event.location || event.teacher || '';
+        if (roomText) {
+          var roomSize = fitFontSize(ctx, roomText, w - 24, 1, compact ? 20 : 24, 12, 700);
+          ctx.fillStyle = colors[0];
+          ctx.font = '700 ' + roomSize + 'px "Microsoft YaHei", sans-serif';
+          canvasText(ctx, roomText, x + 12, y + h - 16, w - 24, 1, roomSize);
+        }
       });
     }
     ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
@@ -2683,9 +2747,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     periods.forEach(function (p, index) {
       var center = bodyTop + index * rowHeight + rowHeight / 2;
-      ctx.fillStyle = pngColors.time; ctx.font = '600 12px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = pngColors.time; ctx.font = '600 13px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
       ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 5);
-      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '10px sans-serif';
+      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '11px sans-serif';
       ctx.fillText(p.start, margin + timeWidth / 2, center + 11);
       ctx.fillText(p.end, margin + timeWidth / 2, center + 24);
       ctx.textAlign = 'left';
@@ -2707,14 +2771,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var bh = (endIndex - startIndex + 1) * rowHeight - 8;
         ctx.fillStyle = colors[1]; roundedRect(ctx, bx, by, bw, bh, 6); ctx.fill();
         ctx.fillStyle = colors[0]; roundedRect(ctx, bx, by, 4, bh, 2); ctx.fill();
-        ctx.fillStyle = pngColors.eventText; ctx.font = '600 15px "Microsoft YaHei", sans-serif';
-        var nameLines = Math.max(1, Math.min(4, Math.floor((bh - 34) / 20)));
-        var nameRows = canvasText(ctx, event.name, bx + 8, by + 24, bw - 13, nameLines, 20);
-        var metaY = by + 24 + nameRows * 20;
-        ctx.fillStyle = pngColors.eventSecondary; ctx.font = '11.5px sans-serif';
-        ctx.fillText(event.start + '–' + event.end, bx + 8, metaY);
-        ctx.font = '11.5px "Microsoft YaHei", sans-serif';
-        canvasText(ctx, event.location || event.teacher, bx + 8, metaY + 15, bw - 13, 1, 13);
+        var compact = bh < 180;
+        var maxNameWidth = bw - 16;
+        ctx.fillStyle = pngColors.eventText;
+        drawCourseName(ctx, event.name, bx + 10, by + 24, maxNameWidth, 3, 32, 18);
+        var roomText = event.location || event.teacher || '';
+        if (roomText) {
+          var roomSize = fitFontSize(ctx, roomText, bw - 20, 1, compact ? 22 : 26, 12, 700);
+          ctx.fillStyle = colors[0];
+          ctx.font = '700 ' + roomSize + 'px "Microsoft YaHei", sans-serif';
+          canvasText(ctx, roomText, bx + 10, by + bh - 16, bw - 20, 1, roomSize);
+        }
       });
     }
 
