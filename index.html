@@ -2520,7 +2520,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var pngCardProfiles = {
     wide: {
       padX: 16, padY: 9, radius: 10, compactHeight: 92, centerRatio: .5,
-      nameMax: 28, nameMin: 16, compactNameMax: 20,
+      nameMax: 28, nameMin: 16, compactNameMax: 20, metaSize: 15, metaMin: 9, compactMetaSize: 13,
       sectionSize: 13, roomSize: 15, roomMin: 11,
       chipPadX: 9, chipHeight: 26, lineHeight: 1.24,
       gapSection: 3, gapRoom: 9,
@@ -2528,8 +2528,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     },
     phone: {
       padX: 12, padY: 10, radius: 9, compactHeight: 188, centerRatio: .382,
-      nameMax: 26, nameMin: 15, compactNameMax: 22,
-      sectionSize: 11, roomSize: 13, roomMin: 10,
+      nameMax: 26, nameMin: 15, compactNameMax: 22, metaSize: 14, metaMin: 9, compactMetaSize: 12,
+      sectionSize: 11, roomSize: 14, roomMin: 10,
       chipPadX: 8, chipHeight: 23, lineHeight: 1.22,
       gapSection: 3, gapRoom: 8,
       compactPadY: 8, compactRoomSize: 12, compactChipHeight: 19, compactGapRoom: 5
@@ -2606,6 +2606,38 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return chipHeight;
   }
 
+  function drawMetaLine(ctx, parts, x, y, maxWidth, profile, compact) {
+    parts = parts.filter(function (part) { return part && part.text; });
+    if (!parts.length) return 0;
+    var size = compact ? profile.compactMetaSize : profile.metaSize;
+    var minSize = profile.metaMin;
+    var separator = ' · ';
+    function measureTotal(at) {
+      ctx.font = '500 ' + at + 'px "Microsoft YaHei", sans-serif';
+      var total = 0;
+      parts.forEach(function (part, index) {
+        total += ctx.measureText(part.text).width;
+        if (index < parts.length - 1) total += ctx.measureText(separator).width;
+      });
+      return total;
+    }
+    while (size > minSize && measureTotal(size) > maxWidth) size--;
+    ctx.font = '500 ' + size + 'px "Microsoft YaHei", sans-serif';
+    var total = measureTotal(size);
+    var cx = x;
+    parts.forEach(function (part, index) {
+      ctx.fillStyle = part.color;
+      ctx.fillText(part.text, cx, y);
+      cx += ctx.measureText(part.text).width;
+      if (index < parts.length - 1) {
+        ctx.fillStyle = 'rgba(115, 121, 136, .55)';
+        ctx.fillText(separator, cx, y);
+        cx += ctx.measureText(separator).width;
+      }
+    });
+    return size * 1.25;
+  }
+
   function drawCourseCard(ctx, event, x, y, w, h, profileName) {
     var profile = pngCardProfiles[profileName];
     var colors = eventColors(event, true);
@@ -2627,6 +2659,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var info = courseNameInfo(event.name);
     var nameText = compact ? String(event.name || '').trim() : info.main;
     var section = compact ? '' : info.section;
+    var teacher = String(event.teacher || '').trim();
+    var roomText = String(event.location || '').trim();
     var maxWidth = w - profile.padX * 2;
     var layout;
     if (compact) {
@@ -2637,16 +2671,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     var nameSize = layout.size;
     var lineHeight = nameSize * profile.lineHeight;
-    var sectionHeight = section ? profile.sectionSize * 1.3 : 0;
-    var roomText = event.location || event.teacher || '';
+    var metaSize = compact ? profile.compactMetaSize : profile.metaSize;
+    var metaHeight = (teacher || section || (compact && roomText)) ? metaSize * 1.25 : 0;
     var padY = compact ? profile.compactPadY : profile.padY;
     var roomSize = compact ? profile.compactRoomSize : profile.roomSize;
     var chipHeight = compact ? profile.compactChipHeight : profile.chipHeight;
     var gapRoom = compact ? profile.compactGapRoom : profile.gapRoom;
-    var roomHeight = roomText ? chipHeight : 0;
+    var gapMeta = 5;
+    var roomHeight = !compact && roomText ? chipHeight : 0;
     var totalHeight = layout.lines.length * lineHeight
-      + (section ? profile.gapSection + sectionHeight : 0)
-      + (roomText ? gapRoom + roomHeight : 0);
+      + (metaHeight ? gapMeta + metaHeight : 0)
+      + (roomHeight ? gapRoom + roomHeight : 0);
 
     var centerY = y + h * (profile.centerRatio || .5);
     var top = centerY - totalHeight / 2;
@@ -2660,16 +2695,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ctx.fillText(line, x + profile.padX, top + lineHeight / 2 + index * lineHeight);
     });
     var cursor = top + layout.lines.length * lineHeight;
-    if (section) {
-      cursor += profile.gapSection;
-      ctx.fillStyle = colors[0];
-      ctx.globalAlpha = .68;
-      ctx.font = '500 ' + profile.sectionSize + 'px "Microsoft YaHei", sans-serif';
-      ctx.fillText(section, x + profile.padX, cursor + sectionHeight / 2);
-      ctx.globalAlpha = 1;
-      cursor += sectionHeight;
+    if (metaHeight) {
+      cursor += gapMeta;
+      var metaParts = compact
+        ? [
+            { text: teacher, color: pngColors.heading },
+            { text: roomText, color: colors[0] }
+          ]
+        : [
+            { text: teacher, color: pngColors.heading },
+            { text: section, color: colors[0] }
+          ];
+      drawMetaLine(ctx, metaParts, x + profile.padX, cursor + metaHeight / 2, maxWidth, profile, compact);
+      cursor += metaHeight;
     }
-    if (roomText) {
+    if (roomHeight) {
       cursor += gapRoom;
       drawRoomChip(ctx, roomText, x + profile.padX, cursor, maxWidth, profile, colors[0], chipHeight, roomSize);
     }
