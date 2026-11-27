@@ -2517,37 +2517,161 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return minSize;
   }
 
-  function courseNameParts(value) {
-    var s = String(value || '').trim();
-    var idx = s.search(/[（(]/);
-    if (idx <= 0) return [s];
-    var prefix = s.slice(0, idx).trim();
-    var suffix = s.slice(idx).trim();
-    if (prefix.length > 6) {
-      return [prefix.slice(0, 4), prefix.slice(4) + suffix];
+  var pngCardProfiles = {
+    wide: {
+      padX: 16, padY: 9, radius: 10, compactHeight: 92,
+      nameMax: 28, nameMin: 16, compactNameMax: 20,
+      sectionSize: 13, roomSize: 15, roomMin: 11,
+      chipPadX: 9, chipHeight: 26, lineHeight: 1.24,
+      gapSection: 3, gapRoom: 9,
+      compactPadY: 7, compactRoomSize: 13, compactChipHeight: 22, compactGapRoom: 4
+    },
+    phone: {
+      padX: 12, padY: 10, radius: 9, compactHeight: 188,
+      nameMax: 26, nameMin: 15, compactNameMax: 22,
+      sectionSize: 11, roomSize: 13, roomMin: 10,
+      chipPadX: 8, chipHeight: 23, lineHeight: 1.22,
+      gapSection: 3, gapRoom: 8,
+      compactPadY: 8, compactRoomSize: 12, compactChipHeight: 19, compactGapRoom: 5
     }
-    return [prefix, suffix];
+  };
+
+  function courseNameInfo(value) {
+    var text = String(value || '').trim();
+    var match = text.match(/^(.*)[（(]([^）)]+)[）)]$/);
+    if (!match || !match[1].trim()) return { main: text, section: '' };
+    return { main: match[1].trim(), section: '（' + match[2].trim() + '）' };
   }
 
-  function drawCourseName(ctx, value, x, y, maxWidth, maxLines, maxSize, minSize) {
-    var parts = courseNameParts(value);
-    if (parts.length > 1) {
-      var size = maxSize;
-      parts.forEach(function (part) {
-        size = Math.min(size, fitFontSize(ctx, part, maxWidth, 1, maxSize, minSize, 600));
-      });
-      ctx.font = '600 ' + size + 'px "Microsoft YaHei", sans-serif';
-      parts.forEach(function (line, index) {
-        ctx.fillText(line, x, y + index * size * 1.15);
-      });
-      return size;
+  function semanticCourseLines(value) {
+    var text = String(value || '');
+    var suffixes = ['基本原理', '应用基础', '人文解读'];
+    for (var i = 0; i < suffixes.length; i++) {
+      var suffix = suffixes[i];
+      var prefix = text.slice(0, text.length - suffix.length);
+      if (prefix.length >= 2 && text.length - suffix.length >= 2) {
+        if (text.slice(-suffix.length) === suffix) return [prefix, suffix];
+      }
     }
-    var oneLine = String(value || '').length <= 5;
-    var linesAllowed = oneLine ? 1 : maxLines;
-    var oneSize = fitFontSize(ctx, value, maxWidth, linesAllowed, maxSize, minSize, 600);
-    ctx.font = '600 ' + oneSize + 'px "Microsoft YaHei", sans-serif';
-    canvasText(ctx, value, x, y, maxWidth, linesAllowed, oneSize * 1.15);
-    return oneSize;
+    var lab = text.match(/^(.*?)(实验[A-Za-z]?)$/);
+    if (lab && lab[1].length >= 2) return [lab[1], lab[2]];
+    return null;
+  }
+
+  function balancedCourseLines(value) {
+    var chars = Array.from(String(value || ''));
+    if (chars.length < 2) return [String(value || '')];
+    var count = chars.length > 12 ? 3 : 2;
+    var per = Math.ceil(chars.length / count);
+    var lines = [];
+    for (var i = 0; i < chars.length; i += per) lines.push(chars.slice(i, i + per).join(''));
+    return lines;
+  }
+
+  function layoutCourseName(ctx, value, maxWidth, maxSize, minSize, maxLines, weight) {
+    var text = String(value || '').trim();
+    var chars = Array.from(text);
+    for (var size = maxSize; size >= minSize; size--) {
+      ctx.font = (weight || 600) + ' ' + size + 'px "Microsoft YaHei", sans-serif';
+      if (chars.length <= 9 && ctx.measureText(text).width <= maxWidth) {
+        return { lines: [text], size: size };
+      }
+      if (maxLines > 1 && chars.length > 5) {
+        var semantic = semanticCourseLines(text);
+        var lines = semantic || balancedCourseLines(text);
+        var widest = 0;
+        lines.forEach(function (line) { widest = Math.max(widest, ctx.measureText(line).width); });
+        if (lines.length <= maxLines && widest <= maxWidth) return { lines: lines, size: size };
+      }
+    }
+    ctx.font = (weight || 600) + ' ' + minSize + 'px "Microsoft YaHei", sans-serif';
+    return { lines: balancedCourseLines(text), size: minSize };
+  }
+
+  function drawRoomChip(ctx, text, x, y, maxWidth, profile, accent, chipHeight, roomSize) {
+    var size = roomSize;
+    while (size > profile.roomMin && ctx.measureText(text).width > maxWidth - profile.chipPadX * 2) {
+      size--;
+      ctx.font = '600 ' + size + 'px "Microsoft YaHei", sans-serif';
+    }
+    ctx.font = '600 ' + size + 'px "Microsoft YaHei", sans-serif';
+    var chipWidth = Math.min(maxWidth, ctx.measureText(text).width + profile.chipPadX * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, .72)';
+    roundedRect(ctx, x, y, chipWidth, chipHeight, chipHeight / 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(24, 33, 47, .08)'; ctx.lineWidth = 1;
+    roundedRect(ctx, x, y, chipWidth, chipHeight, chipHeight / 2); ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.font = '600 ' + size + 'px "Microsoft YaHei", sans-serif';
+    ctx.fillText(text, x + profile.chipPadX, y + chipHeight / 2);
+    return chipHeight;
+  }
+
+  function drawCourseCard(ctx, event, x, y, w, h, profileName) {
+    var profile = pngCardProfiles[profileName];
+    var colors = eventColors(event, true);
+    ctx.save();
+    ctx.shadowColor = 'rgba(31, 38, 58, .07)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = colors[1];
+    roundedRect(ctx, x, y, w, h, profile.radius); ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = colors[0]; ctx.globalAlpha = .16; ctx.lineWidth = 1;
+    roundedRect(ctx, x, y, w, h, profile.radius); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = colors[0];
+    roundedRect(ctx, x, y, 5, h, 3); ctx.fill();
+
+    var compact = h < profile.compactHeight;
+    var info = courseNameInfo(event.name);
+    var nameText = compact ? String(event.name || '').trim() : info.main;
+    var section = compact ? '' : info.section;
+    var maxWidth = w - profile.padX * 2;
+    var layout;
+    if (compact) {
+      var compactSize = fitFontSize(ctx, nameText, maxWidth, 1, profile.compactNameMax, profile.nameMin, 600);
+      layout = { lines: [nameText], size: compactSize };
+    } else {
+      layout = layoutCourseName(ctx, nameText, maxWidth, profile.nameMax, profile.nameMin, 2, 600);
+    }
+    var nameSize = layout.size;
+    var lineHeight = nameSize * profile.lineHeight;
+    var sectionHeight = section ? profile.sectionSize * 1.3 : 0;
+    var roomText = event.location || event.teacher || '';
+    var padY = compact ? profile.compactPadY : profile.padY;
+    var roomSize = compact ? profile.compactRoomSize : profile.roomSize;
+    var chipHeight = compact ? profile.compactChipHeight : profile.chipHeight;
+    var gapRoom = compact ? profile.compactGapRoom : profile.gapRoom;
+    var roomHeight = roomText ? chipHeight : 0;
+    var totalHeight = layout.lines.length * lineHeight
+      + (section ? profile.gapSection + sectionHeight : 0)
+      + (roomText ? gapRoom + roomHeight : 0);
+
+    var top = y + Math.max(padY, (h - totalHeight) / 2);
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = pngColors.eventText;
+    ctx.font = '600 ' + nameSize + 'px "Microsoft YaHei", sans-serif';
+    layout.lines.forEach(function (line, index) {
+      ctx.fillText(line, x + profile.padX, top + lineHeight / 2 + index * lineHeight);
+    });
+    var cursor = top + layout.lines.length * lineHeight;
+    if (section) {
+      cursor += profile.gapSection;
+      ctx.fillStyle = colors[0];
+      ctx.globalAlpha = .68;
+      ctx.font = '500 ' + profile.sectionSize + 'px "Microsoft YaHei", sans-serif';
+      ctx.fillText(section, x + profile.padX, cursor + sectionHeight / 2);
+      ctx.globalAlpha = 1;
+      cursor += sectionHeight;
+    }
+    if (roomText) {
+      cursor += gapRoom;
+      drawRoomChip(ctx, roomText, x + profile.padX, cursor, maxWidth, profile, colors[0], chipHeight, roomSize);
+    }
+    ctx.restore();
   }
 
   function canvasText(ctx, value, x, y, maxWidth, maxLines, lineHeight) {
@@ -2657,19 +2781,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var y = bodyTop + startIndex * rowHeight + 4;
         var w = laneWidth - 8;
         var h = (endIndex - startIndex + 1) * rowHeight - 8;
-        ctx.fillStyle = colors[1]; roundedRect(ctx, x, y, w, h, 7); ctx.fill();
-        ctx.fillStyle = colors[0]; roundedRect(ctx, x, y, 4, h, 2); ctx.fill();
-        var compact = h < 100;
-        var maxNameWidth = w - 24;
-        ctx.fillStyle = pngColors.eventText;
-        drawCourseName(ctx, event.name, x + 12, y + 22, maxNameWidth, compact ? 1 : 2, compact ? 26 : 34, 18);
-        var roomText = event.location || event.teacher || '';
-        if (roomText) {
-          var roomSize = fitFontSize(ctx, roomText, w - 24, 1, compact ? 20 : 24, 12, 700);
-          ctx.fillStyle = colors[0];
-          ctx.font = '700 ' + roomSize + 'px "Microsoft YaHei", sans-serif';
-          canvasText(ctx, roomText, x + 12, y + h - 16, w - 24, 1, roomSize);
-        }
+        drawCourseCard(ctx, event, x, y, w, h, 'wide');
       });
     }
     ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
@@ -2769,19 +2881,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var by = bodyTop + startIndex * rowHeight + 4;
         var bw = laneWidth - 6;
         var bh = (endIndex - startIndex + 1) * rowHeight - 8;
-        ctx.fillStyle = colors[1]; roundedRect(ctx, bx, by, bw, bh, 6); ctx.fill();
-        ctx.fillStyle = colors[0]; roundedRect(ctx, bx, by, 4, bh, 2); ctx.fill();
-        var compact = bh < 180;
-        var maxNameWidth = bw - 16;
-        ctx.fillStyle = pngColors.eventText;
-        drawCourseName(ctx, event.name, bx + 10, by + 24, maxNameWidth, 3, 32, 18);
-        var roomText = event.location || event.teacher || '';
-        if (roomText) {
-          var roomSize = fitFontSize(ctx, roomText, bw - 20, 1, compact ? 22 : 26, 12, 700);
-          ctx.fillStyle = colors[0];
-          ctx.font = '700 ' + roomSize + 'px "Microsoft YaHei", sans-serif';
-          canvasText(ctx, roomText, bx + 10, by + bh - 16, bw - 20, 1, roomSize);
-        }
+        drawCourseCard(ctx, event, bx, by, bw, bh, 'phone');
       });
     }
 
