@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="author" content="覃泰然 · 机设25-2">
+  <!-- Powered by 覃泰然 · 机设25-2 -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; script-src 'self' file: 'unsafe-inline'; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>课表日历 · xls 转 ICS</title>
   <style>
@@ -526,8 +528,27 @@ td:last-child, th:last-child { padding-right: 20px; }
   .week-event strong { margin-bottom: 1px; font-size: 7px; }
 }
 
+.site-sign {
+  width: min(1420px, calc(100% - 56px));
+  margin: 0 auto 20px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: .3px;
+  text-align: right;
+  opacity: .16;
+  user-select: none;
+  transition: opacity .2s ease;
+}
+
+.site-sign:hover { opacity: .45; }
+
+@media (max-width: 720px) {
+  .site-sign { width: calc(100% - 32px); margin-bottom: 16px; }
+}
+
 @media print {
-  .topbar, .hero, .settings-panel, .result-actions, .tabs, .week-picker, .anomaly-panel { display: none !important; }
+  .topbar, .hero, .settings-panel, .result-actions, .tabs, .week-picker, .anomaly-panel, .site-sign { display: none !important; }
   .workspace { display: block; }
   .panel { box-shadow: none; }
 }
@@ -726,6 +747,8 @@ td:last-child, th:last-child { padding-right: 20px; }
     </div>
   </main>
 
+  <footer class="site-sign" aria-hidden="true">Powered by 覃泰然 · 机设25-2</footer>
+
   <dialog id="block-editor" class="block-editor" aria-labelledby="block-editor-title">
     <form id="block-editor-form">
       <div class="dialog-heading"><h2 id="block-editor-title">修改课程块</h2><button id="editor-close" class="icon-button" type="button" aria-label="关闭">×</button></div>
@@ -772,6 +795,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
 </script>
   <script>
+/* Powered by 覃泰然 · 机设25-2 */
 /* xskb -> ICS. All parsing is local; the same file runs in browsers and Node. */
 (function (root, factory) {
   'use strict';
