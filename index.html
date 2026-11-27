@@ -805,9 +805,9 @@ td:last-child, th:last-child { padding-right: 20px; }
   </dialog>
 
   <dialog id="png-dialog" class="png-dialog" aria-labelledby="png-dialog-title">
-    <div class="dialog-heading"><h2 id="png-dialog-title">课表图片已生成</h2><button id="png-dialog-close" class="icon-button" type="button" aria-label="关闭">×</button></div>
+    <div class="dialog-heading"><h2 id="png-dialog-title">图片已生成</h2><button id="png-dialog-close" class="icon-button" type="button" aria-label="关闭">×</button></div>
     <div class="png-dialog-body">
-      <img id="png-dialog-preview" class="png-dialog-preview" alt="导出的课表图片">
+      <img id="png-dialog-preview" class="png-dialog-preview" alt="导出的图片">
       <p id="png-dialog-note" class="png-dialog-note">可直接分享到微信，也可以下载图片。</p>
     </div>
     <div class="dialog-actions png-dialog-actions">
@@ -2504,7 +2504,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else dialog.setAttribute('open', '');
   }
 
-  function deliverWeekPNG(blob, name) {
+  function deliverPNG(blob, name) {
     var file = makePngFile(blob, name);
     var platform = detectPlatform();
     var mobile = platform === 'ios' || platform === 'android';
@@ -2943,7 +2943,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 18);
     canvas.toBlob(function (blob) {
-      if (blob) { deliverWeekPNG(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); }
+      if (blob) { deliverPNG(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); }
       else toast('PNG 导出失败，请使用浏览器截图功能');
     }, 'image/png');
   }
@@ -3047,7 +3047,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, height - 22);
     ctx.textAlign = 'left';
     canvas.toBlob(function (blob) {
-      if (blob) { deliverWeekPNG(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); }
+      if (blob) { deliverPNG(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); }
       else toast('PNG 导出失败，请使用浏览器截图功能');
     }, 'image/png');
   }
@@ -3171,7 +3171,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillText('课表日历 · 把课表变成手机日历', margin, 1502);
 
     canvas.toBlob(function (blob) {
-      if (blob) { saveBlob(blob, r.semester + '-学期总结.png'); toast('学期总结已导出'); }
+      if (blob) { deliverPNG(blob, r.semester + '-学期总结.png'); }
       else toast('总结图导出失败，请使用浏览器截图功能');
     }, 'image/png');
   }
