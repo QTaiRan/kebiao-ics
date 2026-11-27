@@ -361,12 +361,13 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .summary-card small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.5; }
 .room-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
 .room-chip { max-width: 100%; padding: 3px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted-strong); font-size: 9px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-more { padding: 3px 6px; color: var(--muted); font-size: 9px; line-height: 1.5; white-space: nowrap; }
 .summary-empty { color: var(--muted); font-size: 9px; }
 .summary-foot { margin: 12px 1px 0; color: var(--muted); font-size: 9px; }
 .summary-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .summary-actions .button { height: 28px; padding: 0 10px; font-size: 10px; }
 
-.course-rank { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
+.course-rank, .room-rank { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
 .rank-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rank-head h4 { margin: 0; font-size: 12px; letter-spacing: -.01em; }
 .rank-head span { color: var(--muted); font-size: 9px; white-space: nowrap; }
@@ -729,6 +730,11 @@ td:last-child, th:last-child { padding-right: 20px; }
                   <div class="rank-head"><h4>课时最多的课</h4></div>
                   <div id="course-rank-list" class="rank-list"></div>
                   <p id="course-rank-foot" class="rank-foot"></p>
+                </div>
+                <div class="room-rank">
+                  <div class="rank-head"><h4>教室排行</h4></div>
+                  <div id="room-rank-list" class="rank-list"></div>
+                  <p id="room-rank-foot" class="rank-foot"></p>
                 </div>
               </div>
             </div>
@@ -2176,9 +2182,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('summary-days').textContent = summary.classDays;
     $('summary-days-rate').textContent = '共 ' + summary.totalDays + ' 天，占 ' + formatSummaryRate(summary.classDayRate);
     $('summary-rooms').textContent = summary.roomCount;
-    $('summary-room-list').innerHTML = summary.rooms.length ? summary.rooms.map(function (room) {
-      return '<span class="room-chip" title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
-    }).join('') : '<span class="summary-empty">暂无教室信息</span>';
+    $('summary-room-list').innerHTML = summary.rooms.length ? summary.rooms.map(function (room, index) {
+      return '<span class="room-chip"' + (index >= 3 ? ' hidden' : '') + ' title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
+    }).join('') + (summary.rooms.length > 3 ? '<span class="room-more">+' + (summary.rooms.length - 3) + '</span>' : '') : '<span class="summary-empty">暂无教室信息</span>';
     $('summary-early-days').textContent = summary.earlyDays;
     $('summary-early-rate').textContent = formatSummaryRate(summary.earlyRate);
     $('summary-evening-days').textContent = summary.eveningDays;
@@ -2195,6 +2201,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }).join('') : '<span class="summary-empty">暂无课程信息</span>';
     var lightest = ranking.length > 1 ? ranking[ranking.length - 1] : null;
     $('course-rank-foot').textContent = lightest ? '最轻松的一门：' + lightest.name + ' · ' + formatRankMinutes(lightest.minutes) : '';
+    var roomTop = summary.rooms.slice(0, 5);
+    var maxVisits = roomTop.length ? roomTop[0].visits : 1;
+    $('room-rank-list').innerHTML = roomTop.length ? roomTop.map(function (room, index) {
+      var width = Math.max(5, Math.round(room.visits / maxVisits * 100));
+      return '<div class="rank-row"><span class="rank-no">' + (index + 1) + '</span><span class="rank-name" title="' + escapeHTML(room.name) + '">' + escapeHTML(room.name) + '</span><span class="rank-time">' + room.visits + ' 次</span><div class="rank-track"><div class="rank-fill" style="width:' + width + '%"></div></div></div>';
+    }).join('') : '<span class="summary-empty">暂无教室信息</span>';
+    $('room-rank-foot').textContent = summary.roomCount > 5 ? '共 ' + summary.roomCount + ' 间教室' : '';
   }
 
   function renderDetails() {
