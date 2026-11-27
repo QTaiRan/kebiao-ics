@@ -62,6 +62,8 @@
   --event-fallback: #756bd0;
   --shadow: 0 8px 30px var(--shadow-color);
   --brand-glow: 0 5px 14px var(--brand-shadow);
+  --dialog-backdrop: rgba(17, 20, 28, .46);
+  --dialog-shadow: 0 24px 60px rgba(20, 24, 38, .28);
   --event-gutter: 4px;
   --event-border: 3px;
   --week-row-height: 68px;
@@ -476,6 +478,18 @@ td:last-child, th:last-child { padding-right: 20px; }
 .error-panel .icon-button { position: absolute; top: 9px; right: 10px; }
 .toast { position: fixed; left: 50%; bottom: 28px; z-index: 50; transform: translateX(-50%); max-width: min(90vw, 480px); padding: 11px 18px; border-radius: 10px; background: var(--toast-bg); color: var(--toast-ink); box-shadow: var(--shadow); font-size: 12px; text-align: center; }
 
+.png-dialog { width: min(92vw, 560px); max-height: 92vh; padding: 0; border: 0; border-radius: 16px; background: var(--panel); color: var(--ink); box-shadow: var(--dialog-shadow); overflow: hidden; }
+.png-dialog::backdrop { background: var(--dialog-backdrop); backdrop-filter: blur(3px); }
+.png-dialog-body { padding: 15px 20px 0; overflow: auto; }
+.png-dialog-preview { display: block; width: 100%; max-height: 56vh; object-fit: contain; border: 1px solid var(--line); border-radius: 10px; background: var(--disabled); }
+.png-dialog-note { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.png-dialog-actions .button { min-width: 112px; }
+@media (max-width: 480px) {
+  .png-dialog { width: calc(100vw - 24px); }
+  .png-dialog-actions { padding: 14px 16px 16px; }
+  .png-dialog-actions .button { flex: 1 1 0; min-width: 0; }
+}
+
 @media (max-width: 1100px) {
   .workspace { grid-template-columns: 280px minmax(0, 1fr); }
   .settings-panel { padding: 19px; }
@@ -788,6 +802,18 @@ td:last-child, th:last-child { padding-right: 20px; }
       <p id="editor-error" class="editor-error" role="alert" hidden></p>
       <div class="dialog-actions"><button id="editor-cancel" class="button secondary" type="button">取消</button><button class="button primary" type="submit">保存修改</button></div>
     </form>
+  </dialog>
+
+  <dialog id="png-dialog" class="png-dialog" aria-labelledby="png-dialog-title">
+    <div class="dialog-heading"><h2 id="png-dialog-title">课表图片已生成</h2><button id="png-dialog-close" class="icon-button" type="button" aria-label="关闭">×</button></div>
+    <div class="png-dialog-body">
+      <img id="png-dialog-preview" class="png-dialog-preview" alt="导出的课表图片">
+      <p id="png-dialog-note" class="png-dialog-note">可直接分享到微信，也可以下载图片。</p>
+    </div>
+    <div class="dialog-actions png-dialog-actions">
+      <button id="png-dialog-save" class="button secondary" type="button">保存图片</button>
+      <button id="png-dialog-share" class="button primary" type="button">分享图片</button>
+    </div>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <script>
@@ -2434,6 +2460,94 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
   }
 
+  var pngPending = null;
+
+  function makePngFile(blob, name) {
+    try { return new File([blob], name, { type: 'image/png' }); }
+    catch (error) { return null; }
+  }
+
+  function canSharePng(file) {
+    if (!file || !navigator.share) return false;
+    if (navigator.canShare) {
+      try { return navigator.canShare({ files: [file] }); }
+      catch (error) { return false; }
+    }
+    return true;
+  }
+
+  function sharePng(file, name) {
+    return navigator.share({ files: [file], title: name });
+  }
+
+  function cleanupPngDialog() {
+    if (!pngPending) return;
+    if (pngPending.url) URL.revokeObjectURL(pngPending.url);
+    pngPending = null;
+    $('png-dialog-preview').removeAttribute('src');
+  }
+
+  function closePngDialog() {
+    var dialog = $('png-dialog');
+    if (dialog.open) dialog.close();
+    else cleanupPngDialog();
+  }
+
+  function openPngDialog(file, name, note) {
+    cleanupPngDialog();
+    var url = URL.createObjectURL(file);
+    pngPending = { file: file, name: name, url: url };
+    $('png-dialog-preview').src = url;
+    $('png-dialog-note').textContent = note || '可直接分享到微信，也可以下载图片。';
+    var dialog = $('png-dialog');
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  function deliverWeekPNG(blob, name) {
+    var file = makePngFile(blob, name);
+    var platform = detectPlatform();
+    var mobile = platform === 'ios' || platform === 'android';
+    if (mobile && canSharePng(file)) {
+      try {
+        sharePng(file, name).catch(function (error) {
+          if (error && error.name === 'AbortError') return;
+          openPngDialog(file, name, '系统分享没有打开，点下面的按钮再试。');
+        });
+        return;
+      } catch (error) {}
+    }
+    saveBlob(blob, name);
+    toast('图片已保存，可直接分享');
+  }
+
+  function savePendingPng() {
+    if (!pngPending) return;
+    saveBlob(pngPending.file, pngPending.name);
+    toast('图片已保存');
+    closePngDialog();
+  }
+
+  function sharePendingPng() {
+    if (!pngPending) return;
+    var file = pngPending.file;
+    var name = pngPending.name;
+    if (!canSharePng(file)) {
+      toast('当前浏览器不支持直接分享，请保存图片');
+      return;
+    }
+    try {
+      sharePng(file, name).then(function () {
+        closePngDialog();
+      }).catch(function (error) {
+        if (error && error.name === 'AbortError') return;
+        toast('分享没有打开，请再试一次');
+      });
+    } catch (error) {
+      toast('分享没有打开，请保存图片');
+    }
+  }
+
   function downloadICS() {
     if (!state.calendar) return;
     saveBlob(icsBlob(), fileName());
@@ -2829,7 +2943,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 18);
     canvas.toBlob(function (blob) {
-      if (blob) { saveBlob(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); toast('第 ' + state.selectedWeek + ' 周 16:9 课表已导出'); }
+      if (blob) { deliverWeekPNG(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); }
       else toast('PNG 导出失败，请使用浏览器截图功能');
     }, 'image/png');
   }
@@ -2933,7 +3047,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, height - 22);
     ctx.textAlign = 'left';
     canvas.toBlob(function (blob) {
-      if (blob) { saveBlob(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); toast('第 ' + state.selectedWeek + ' 周手机竖屏课表已导出'); }
+      if (blob) { deliverWeekPNG(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); }
       else toast('PNG 导出失败，请使用浏览器截图功能');
     }, 'image/png');
   }
@@ -3130,6 +3244,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('download-button').addEventListener('click', downloadICS);
     $('calendar-button').addEventListener('click', addToCalendar);
     $('png-button').addEventListener('click', exportPNG);
+    $('png-dialog-close').addEventListener('click', closePngDialog);
+    $('png-dialog-save').addEventListener('click', savePendingPng);
+    $('png-dialog-share').addEventListener('click', sharePendingPng);
+    $('png-dialog').addEventListener('close', cleanupPngDialog);
     $('summary-export').addEventListener('click', exportSemesterSummary);
     $('error-close').addEventListener('click', clearError);
   }
