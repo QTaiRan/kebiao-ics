@@ -693,7 +693,7 @@ td:last-child, th:last-child { padding-right: 20px; }
                   <article class="summary-card duration">
                     <span class="summary-label">本学期总上课时长</span>
                     <strong id="summary-duration">0 小时 0 分钟</strong>
-                    <small>按实际节次时长累计，课间不计</small>
+                    <small>本学期累计</small>
                   </article>
                   <article class="summary-card days">
                     <span class="summary-label">上课天数</span>
@@ -713,7 +713,6 @@ td:last-child, th:last-child { padding-right: 20px; }
                   <article class="summary-card average">
                     <span class="summary-label">日均上课</span>
                     <strong id="summary-average">0 分钟</strong>
-                    <small>平均每个有课日</small>
                   </article>
                   <article class="summary-card rooms">
                     <span class="summary-label">教室数</span>
@@ -727,11 +726,10 @@ td:last-child, th:last-child { padding-right: 20px; }
                   </article>
                 </div>
                 <div class="course-rank">
-                  <div class="rank-head"><h4>课时最多的课</h4><span>按实际课时累计，课间不计</span></div>
+                  <div class="rank-head"><h4>课时最多的课</h4></div>
                   <div id="course-rank-list" class="rank-list"></div>
                   <p id="course-rank-foot" class="rank-foot"></p>
                 </div>
-                <p class="summary-foot">仅统计课程，自习不计；在线教学不计教室；同一天多门课只算一天。</p>
               </div>
             </div>
 
@@ -2182,9 +2180,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return '<span class="room-chip" title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
     }).join('') : '<span class="summary-empty">暂无教室信息</span>';
     $('summary-early-days').textContent = summary.earlyDays;
-    $('summary-early-rate').textContent = '占 ' + summary.classDays + ' 个有课日的 ' + formatSummaryRate(summary.earlyRate);
+    $('summary-early-rate').textContent = formatSummaryRate(summary.earlyRate);
     $('summary-evening-days').textContent = summary.eveningDays;
-    $('summary-evening-rate').textContent = '占 ' + summary.classDays + ' 个有课日的 ' + formatSummaryRate(summary.eveningRate);
+    $('summary-evening-rate').textContent = formatSummaryRate(summary.eveningRate);
     $('summary-average').textContent = formatSummaryMinutes(summary.averageMinutes);
     $('summary-latest').textContent = summary.latestEnd || '—';
     $('summary-earliest').textContent = summary.earliestStart ? '最早 ' + summary.earliestStart + ' 开始' : '暂无课程';
@@ -2661,14 +2659,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     posterStatCard(ctx, margin, 468, cardWidth, cardHeight, String(summary.classDays), '天', '有课天数', '占学期 ' + formatSummaryRate(summary.classDayRate), posterColors.soft[0]);
     posterStatCard(ctx, margin + cardWidth + gap, 468, cardWidth, cardHeight, String(summary.earlyDays), '天', '早八', '早八率 ' + formatSummaryRate(summary.earlyRate), posterColors.soft[1]);
     posterStatCard(ctx, margin, 468 + cardHeight + gap, cardWidth, cardHeight, String(summary.eveningDays), '天', '晚课', '晚课率 ' + formatSummaryRate(summary.eveningRate), posterColors.soft[2]);
-    posterStatCard(ctx, margin + cardWidth + gap, 468 + cardHeight + gap, cardWidth, cardHeight, String(summary.roomCount), '间', '教室', '在线教学不计入', posterColors.soft[3]);
+    posterStatCard(ctx, margin + cardWidth + gap, 468 + cardHeight + gap, cardWidth, cardHeight, String(summary.roomCount), '间', '教室', '', posterColors.soft[3]);
 
     var ranking = (summary.courseRanking || []).slice(0, 3);
     ctx.fillStyle = posterColors.ink; ctx.font = '700 27px "Microsoft YaHei", sans-serif';
     ctx.fillText('课时最多的课', margin, 858);
-    ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText('按实际课时累计，课间不计', width - margin, 858);
-    ctx.textAlign = 'left';
     var maxMinutes = ranking.length ? ranking[0].minutes : 1;
     ranking.forEach(function (course, index) {
       var top = 902 + index * 92;
@@ -2693,9 +2688,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     ctx.fillStyle = posterColors.ink; ctx.font = '700 23px "Microsoft YaHei", sans-serif';
     ctx.fillText('最常去的教室', margin, 1248);
-    ctx.fillStyle = posterColors.muted; ctx.font = '15px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText('共 ' + summary.roomCount + ' 间', width - margin, 1248);
-    ctx.textAlign = 'left';
     var rooms = summary.rooms.slice(0, 3);
     var roomGap = 18;
     var roomWidth = (width - margin * 2 - roomGap * 2) / 3;
@@ -2712,7 +2704,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
 
     ctx.fillStyle = posterColors.ink; ctx.font = '600 20px "Microsoft YaHei", sans-serif';
-    ctx.fillText('早八率 ' + formatSummaryRate(summary.earlyRate) + ' · 晚课率 ' + formatSummaryRate(summary.eveningRate) + ' · 平均每天 ' + formatRankMinutes(summary.averageMinutes), margin, 1410);
+    ctx.fillText('平均每天 ' + formatRankMinutes(summary.averageMinutes), margin, 1410);
     ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · 把课表变成手机日历', margin, 1460);
     ctx.fillStyle = '#a8a4b8'; ctx.font = '13px "Microsoft YaHei", sans-serif';
