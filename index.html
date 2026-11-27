@@ -1183,7 +1183,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
       if (!duration) duration = Math.max(0, minutes(block.end) - minutes(block.start));
       totalMinutes += duration * block.weeks.length;
-      var courseKey = block.code || [block.name, block.teacher].join('|');
+      var courseKey = text(block.code).trim() ? text(block.code).trim().replace(/\.\d+$/, '') : block.name;
       if (!courseTotals.has(courseKey)) courseTotals.set(courseKey, { name: block.name, minutes: 0 });
       courseTotals.get(courseKey).minutes += duration * block.weeks.length;
       if (!earliestStart || minutes(block.start) < minutes(earliestStart)) earliestStart = block.start;
