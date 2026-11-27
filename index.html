@@ -341,7 +341,7 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
   grid-template-areas:
     "duration duration days"
     "early evening average"
-    "rooms rooms latest";
+    "rooms rooms rooms";
   gap: 10px;
   margin-top: 15px;
 }
@@ -352,12 +352,11 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .summary-card.evening { grid-area: evening; }
 .summary-card.average { grid-area: average; }
 .summary-card.rooms { grid-area: rooms; }
-.summary-card.latest { grid-area: latest; }
 .summary-label { display: block; color: var(--muted); font-size: 10px; line-height: 1.4; }
 .summary-card strong { display: block; margin-top: 5px; color: var(--ink); font-size: 25px; line-height: 1.25; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .summary-card strong em { margin-left: 3px; color: var(--muted); font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: 0; }
 .summary-card.duration strong { font-size: 26px; }
-.summary-card.average strong, .summary-card.latest strong { font-size: 20px; }
+.summary-card.average strong { font-size: 20px; }
 .summary-card small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.5; }
 .room-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
 .room-chip { max-width: 100%; padding: 3px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted-strong); font-size: 9px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -523,8 +522,7 @@ td:last-child, th:last-child { padding-right: 20px; }
       "duration duration"
       "days early"
       "evening average"
-      "rooms rooms"
-      "latest latest";
+      "rooms rooms";
     gap: 8px;
   }
   .summary-card { padding: 12px; }
@@ -719,11 +717,6 @@ td:last-child, th:last-child { padding-right: 20px; }
                     <span class="summary-label">教室数</span>
                     <strong><span id="summary-rooms">0</span><em>间</em></strong>
                     <div id="summary-room-list" class="room-list"></div>
-                  </article>
-                  <article class="summary-card latest">
-                    <span class="summary-label">最晚下课</span>
-                    <strong id="summary-latest">—</strong>
-                    <small id="summary-earliest"></small>
                   </article>
                 </div>
                 <div class="course-rank">
@@ -2183,15 +2176,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('summary-days-rate').textContent = '共 ' + summary.totalDays + ' 天，占 ' + formatSummaryRate(summary.classDayRate);
     $('summary-rooms').textContent = summary.roomCount;
     $('summary-room-list').innerHTML = summary.rooms.length ? summary.rooms.map(function (room, index) {
-      return '<span class="room-chip"' + (index >= 3 ? ' hidden' : '') + ' title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
-    }).join('') + (summary.rooms.length > 3 ? '<span class="room-more">+' + (summary.rooms.length - 3) + '</span>' : '') : '<span class="summary-empty">暂无教室信息</span>';
+      return '<span class="room-chip"' + (index >= 5 ? ' hidden' : '') + ' title="' + room.visits + ' 次课">' + escapeHTML(room.name) + '</span>';
+    }).join('') + (summary.rooms.length > 5 ? '<span class="room-more">+' + (summary.rooms.length - 5) + '</span>' : '') : '<span class="summary-empty">暂无教室信息</span>';
     $('summary-early-days').textContent = summary.earlyDays;
     $('summary-early-rate').textContent = formatSummaryRate(summary.earlyRate);
     $('summary-evening-days').textContent = summary.eveningDays;
     $('summary-evening-rate').textContent = formatSummaryRate(summary.eveningRate);
     $('summary-average').textContent = formatSummaryMinutes(summary.averageMinutes);
-    $('summary-latest').textContent = summary.latestEnd || '—';
-    $('summary-earliest').textContent = summary.earliestStart ? '最早 ' + summary.earliestStart + ' 开始' : '暂无课程';
     var ranking = summary.courseRanking || [];
     var top = ranking.slice(0, 5);
     var maxMinutes = top.length ? top[0].minutes : 1;
