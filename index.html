@@ -2832,8 +2832,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillText('平均每天 ' + formatRankMinutes(summary.averageMinutes), margin, 1462);
     ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · 把课表变成手机日历', margin, 1502);
-    ctx.fillStyle = '#a8a4b8'; ctx.font = '13px "Microsoft YaHei", sans-serif';
-    ctx.fillText('Powered by 覃泰然 · 机设25-2', margin, 1536);
 
     canvas.toBlob(function (blob) {
       if (blob) { saveBlob(blob, r.semester + '-学期总结.png'); toast('学期总结已导出'); }
