@@ -2524,14 +2524,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var width = 1920;
     var height = 1080;
     var scale = 2;
-    var margin = 56;
-    var timeWidth = 136;
+    var margin = 48;
+    var timeWidth = 128;
     var contentWidth = width - margin * 2;
     var dayWidth = (contentWidth - timeWidth) / 7;
-    var gridTop = 96;
-    var headerRowHeight = 36;
+    var gridTop = 100;
+    var headerRowHeight = 40;
     var bodyTop = gridTop + headerRowHeight;
-    var footerHeight = 44;
+    var footerHeight = 46;
     var rowHeight = (height - footerHeight - bodyTop) / rowCount;
     var canvas = document.createElement('canvas');
     canvas.width = width * scale;
@@ -2541,22 +2541,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillStyle = pngColors.background;
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = pngColors.ink;
-    ctx.font = '700 28px "Microsoft YaHei", sans-serif';
-    ctx.fillText(r.semester + ' 课程表 · 第 ' + state.selectedWeek + ' 周', margin, 48);
+    ctx.font = '700 34px "Microsoft YaHei", sans-serif';
+    ctx.fillText(r.semester + ' 课程表 · 第 ' + state.selectedWeek + ' 周', margin, 52);
     ctx.fillStyle = pngColors.muted;
-    ctx.font = '13px "Microsoft YaHei", sans-serif';
-    ctx.fillText(shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · ' + active.length + ' 个课时块', margin, 74);
+    ctx.font = '16px "Microsoft YaHei", sans-serif';
+    ctx.fillText(shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · ' + active.length + ' 个课时块', margin, 80);
     ctx.fillStyle = pngColors.header;
     ctx.fillRect(margin, gridTop, contentWidth, headerRowHeight);
     ctx.strokeStyle = pngColors.line;
     ctx.lineWidth = 1;
     ctx.strokeRect(margin, gridTop, contentWidth, height - footerHeight - gridTop);
+    ctx.fillStyle = pngColors.heading;
+    ctx.font = '600 14px "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('节次 / 时间', margin + timeWidth / 2, gridTop + 24);
+    ctx.textAlign = 'left';
     for (var day = 0; day < 7; day++) {
       var hx = margin + timeWidth + day * dayWidth;
       ctx.fillStyle = pngColors.heading;
-      ctx.font = '600 13px "Microsoft YaHei", sans-serif';
+      ctx.font = '600 16px "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(KB.WEEK_NAMES[day] + '  ' + shortDate(dateAt(day)), hx + dayWidth / 2, gridTop + 23);
+      ctx.fillText(KB.WEEK_NAMES[day], hx + dayWidth / 2, gridTop + 18);
+      ctx.fillStyle = pngColors.muted;
+      ctx.font = '12px "Microsoft YaHei", sans-serif';
+      ctx.fillText(shortDate(dateAt(day)), hx + dayWidth / 2, gridTop + 34);
       ctx.textAlign = 'left';
     }
     for (var i = 0; i <= rowCount; i++) {
@@ -2569,11 +2577,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     periods.forEach(function (p, index) {
       var center = bodyTop + index * rowHeight + rowHeight / 2;
-      ctx.fillStyle = pngColors.time; ctx.font = '600 11px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 6);
-      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '10px sans-serif';
-      ctx.fillText(p.start, margin + timeWidth / 2, center + 11);
-      ctx.fillText(p.end, margin + timeWidth / 2, center + 26);
+      ctx.fillStyle = pngColors.time; ctx.font = '600 13px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 7);
+      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '11px sans-serif';
+      ctx.fillText(p.start, margin + timeWidth / 2, center + 10);
+      ctx.fillText(p.end, margin + timeWidth / 2, center + 24);
       ctx.textAlign = 'left';
     });
     for (var d = 0; d < 7; d++) {
@@ -2592,16 +2600,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var h = (endIndex - startIndex + 1) * rowHeight - 8;
         ctx.fillStyle = colors[1]; roundedRect(ctx, x, y, w, h, 7); ctx.fill();
         ctx.fillStyle = colors[0]; roundedRect(ctx, x, y, 4, h, 2); ctx.fill();
-        ctx.fillStyle = pngColors.eventText; ctx.font = '600 12px "Microsoft YaHei", sans-serif';
-        canvasText(ctx, event.name, x + 10, y + 21, w - 16, Math.max(1, Math.floor((h - 36) / 15)), 15);
-        if (h > 48) {
-          ctx.fillStyle = pngColors.eventSecondary; ctx.font = '9px sans-serif'; ctx.fillText(event.start + '–' + event.end, x + 10, y + h - 21);
-          ctx.font = '9px "Microsoft YaHei", sans-serif'; canvasText(ctx, event.location || event.teacher, x + 10, y + h - 7, w - 16, 1, 10);
-        }
+        ctx.fillStyle = pngColors.eventText; ctx.font = '600 18px "Microsoft YaHei", sans-serif';
+        var nameLines = Math.max(1, Math.min(3, Math.floor((h - 30) / 22)));
+        var nameRows = canvasText(ctx, event.name, x + 12, y + 24, w - 20, nameLines, 22);
+        var metaY = y + 24 + nameRows * 22;
+        ctx.fillStyle = pngColors.eventSecondary; ctx.font = '11px sans-serif'; ctx.fillText(event.start + '–' + event.end, x + 12, metaY);
+        ctx.font = '11px "Microsoft YaHei", sans-serif'; canvasText(ctx, event.location || event.teacher, x + 12, metaY + 15, w - 20, 1, 12);
       });
     }
-    ctx.fillStyle = pngColors.footer; ctx.font = '10px "Microsoft YaHei", sans-serif';
-    ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 16);
+    ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
+    ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 18);
     canvas.toBlob(function (blob) {
       if (blob) { saveBlob(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); toast('第 ' + state.selectedWeek + ' 周 16:9 课表已导出'); }
       else toast('PNG 导出失败，请使用浏览器截图功能');
@@ -2613,17 +2621,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var active = blocksInWeek(state.selectedWeek);
     var periods = displayPeriods();
     var rowCount = Math.max(1, periods.length);
-    var width = 1080;
-    var height = 1920;
+    var width = 1242;
+    var height = 2208;
     var scale = 2;
-    var margin = 40;
-    var timeWidth = 104;
+    var margin = 32;
+    var timeWidth = 96;
     var contentWidth = width - margin * 2;
     var dayWidth = (contentWidth - timeWidth) / 7;
-    var gridTop = 108;
-    var headerRowHeight = 44;
+    var gridTop = 120;
+    var headerRowHeight = 50;
     var bodyTop = gridTop + headerRowHeight;
-    var footerHeight = 48;
+    var footerHeight = 54;
     var rowHeight = (height - footerHeight - bodyTop) / rowCount;
     var canvas = document.createElement('canvas');
     canvas.width = width * scale;
@@ -2634,15 +2642,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillRect(0, 0, width, height);
 
     ctx.fillStyle = '#6257c7';
-    roundedRect(ctx, margin, 28, 44, 6, 3); ctx.fill();
+    roundedRect(ctx, margin, 30, 50, 7, 3.5); ctx.fill();
     ctx.fillStyle = pngColors.ink;
-    ctx.font = '700 25px "Microsoft YaHei", sans-serif';
-    ctx.fillText(r.semester + ' 课程表', margin, 58);
-    ctx.fillStyle = '#6257c7'; ctx.font = '600 16px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, 56);
+    ctx.font = '700 30px "Microsoft YaHei", sans-serif';
+    ctx.fillText(r.semester + ' 课程表', margin, 64);
+    ctx.fillStyle = '#6257c7'; ctx.font = '600 18px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, 62);
     ctx.textAlign = 'left';
-    ctx.fillStyle = pngColors.muted; ctx.font = '12px "Microsoft YaHei", sans-serif';
-    ctx.fillText(shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · ' + active.length + ' 个课时块', margin, 84);
+    ctx.fillStyle = pngColors.muted; ctx.font = '14px "Microsoft YaHei", sans-serif';
+    ctx.fillText(shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · ' + active.length + ' 个课时块', margin, 96);
 
     ctx.fillStyle = pngColors.header;
     ctx.fillRect(margin, gridTop, contentWidth, headerRowHeight);
@@ -2650,17 +2658,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.lineWidth = 1;
     ctx.strokeRect(margin, gridTop, contentWidth, height - footerHeight - gridTop);
     ctx.fillStyle = pngColors.heading;
-    ctx.font = '600 12px "Microsoft YaHei", sans-serif';
+    ctx.font = '600 13px "Microsoft YaHei", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('节次 / 时间', margin + timeWidth / 2, gridTop + 19);
+    ctx.fillText('节次 / 时间', margin + timeWidth / 2, gridTop + 21);
     for (var day = 0; day < 7; day++) {
       var hx = margin + timeWidth + day * dayWidth;
       ctx.fillStyle = pngColors.heading;
-      ctx.font = '600 12px "Microsoft YaHei", sans-serif';
-      ctx.fillText(KB.WEEK_NAMES[day], hx + dayWidth / 2, gridTop + 18);
+      ctx.font = '600 14px "Microsoft YaHei", sans-serif';
+      ctx.fillText(KB.WEEK_NAMES[day], hx + dayWidth / 2, gridTop + 20);
       ctx.fillStyle = pngColors.muted;
-      ctx.font = '10px "Microsoft YaHei", sans-serif';
-      ctx.fillText(shortDate(dateAt(day)), hx + dayWidth / 2, gridTop + 34);
+      ctx.font = '11px "Microsoft YaHei", sans-serif';
+      ctx.fillText(shortDate(dateAt(day)), hx + dayWidth / 2, gridTop + 39);
     }
     ctx.textAlign = 'left';
 
@@ -2675,11 +2683,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     periods.forEach(function (p, index) {
       var center = bodyTop + index * rowHeight + rowHeight / 2;
-      ctx.fillStyle = pngColors.time; ctx.font = '600 10px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 4);
-      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '9px sans-serif';
-      ctx.fillText(p.start, margin + timeWidth / 2, center + 10);
-      ctx.fillText(p.end, margin + timeWidth / 2, center + 21);
+      ctx.fillStyle = pngColors.time; ctx.font = '600 12px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(p.selfStudy ? '早自习' : '第 ' + p.n + ' 节', margin + timeWidth / 2, center - 5);
+      ctx.fillStyle = pngColors.timeSecondary; ctx.font = '10px sans-serif';
+      ctx.fillText(p.start, margin + timeWidth / 2, center + 11);
+      ctx.fillText(p.end, margin + timeWidth / 2, center + 24);
       ctx.textAlign = 'left';
     });
 
@@ -2694,26 +2702,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var startIndex = periods.findIndex(function (p) { return p.n === event.startPeriod; });
         var endIndex = periods.findIndex(function (p) { return p.n === event.endPeriod; });
         if (startIndex < 0 || endIndex < startIndex) return;
-        var by = bodyTop + startIndex * rowHeight + 3;
+        var by = bodyTop + startIndex * rowHeight + 4;
         var bw = laneWidth - 6;
-        var bh = (endIndex - startIndex + 1) * rowHeight - 6;
-        ctx.fillStyle = colors[1]; roundedRect(ctx, bx, by, bw, bh, 5); ctx.fill();
+        var bh = (endIndex - startIndex + 1) * rowHeight - 8;
+        ctx.fillStyle = colors[1]; roundedRect(ctx, bx, by, bw, bh, 6); ctx.fill();
         ctx.fillStyle = colors[0]; roundedRect(ctx, bx, by, 4, bh, 2); ctx.fill();
-        ctx.fillStyle = pngColors.eventText; ctx.font = '600 12px "Microsoft YaHei", sans-serif';
-        var nameLines = Math.max(1, Math.min(4, Math.floor((bh - 20) / 15)));
-        var nameRows = canvasText(ctx, event.name, bx + 8, by + 18, bw - 14, nameLines, 15);
-        var metaY = by + 18 + nameRows * 15;
-        ctx.fillStyle = pngColors.eventSecondary; ctx.font = '9px sans-serif';
+        ctx.fillStyle = pngColors.eventText; ctx.font = '600 15px "Microsoft YaHei", sans-serif';
+        var nameLines = Math.max(1, Math.min(4, Math.floor((bh - 34) / 20)));
+        var nameRows = canvasText(ctx, event.name, bx + 8, by + 24, bw - 13, nameLines, 20);
+        var metaY = by + 24 + nameRows * 20;
+        ctx.fillStyle = pngColors.eventSecondary; ctx.font = '11.5px sans-serif';
         ctx.fillText(event.start + '–' + event.end, bx + 8, metaY);
-        ctx.font = '9px "Microsoft YaHei", sans-serif';
-        canvasText(ctx, event.location || event.teacher, bx + 8, metaY + 12, bw - 14, 1, 10);
+        ctx.font = '11.5px "Microsoft YaHei", sans-serif';
+        canvasText(ctx, event.location || event.teacher, bx + 8, metaY + 15, bw - 13, 1, 13);
       });
     }
 
-    ctx.fillStyle = pngColors.footer; ctx.font = '10px "Microsoft YaHei", sans-serif';
-    ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 20);
+    ctx.fillStyle = pngColors.footer; ctx.font = '11px "Microsoft YaHei", sans-serif';
+    ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 22);
     ctx.textAlign = 'right';
-    ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, height - 20);
+    ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, height - 22);
     ctx.textAlign = 'left';
     canvas.toBlob(function (blob) {
       if (blob) { saveBlob(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); toast('第 ' + state.selectedWeek + ' 周手机竖屏课表已导出'); }
