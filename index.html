@@ -313,6 +313,7 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .button.secondary { color: var(--ink-soft); background: var(--panel); border-color: var(--input-line); }
 .button.secondary:hover { background: var(--row-hover); }
 .button.small { height: 34px; padding: 0 12px; font-size: 11px; }
+.button:disabled { opacity: .5; cursor: default; }
 .icon-button { border: 0; background: transparent; cursor: pointer; font-size: 22px; color: var(--muted); }
 
 #notice-stack { margin-top: 12px; }
@@ -760,7 +761,7 @@ td:last-child, th:last-child { padding-right: 20px; }
                 <div class="section-heading"><h3>选择周次</h3><span id="week-range-label" class="soft-badge"></span></div>
                 <div id="week-preview" class="week-preview"></div>
               </div>
-              <div class="week-toolbar"><div><h3 id="week-title">第 1 周</h3><p id="week-dates"></p></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button></div></div>
+              <div class="week-toolbar"><div><h3 id="week-title">第 1 周</h3><p id="week-dates"></p></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button><button id="batch-button" class="button secondary small" type="button" title="按当前尺寸导出全部周并打包为 ZIP">导出全部周</button></div></div>
               <div id="week-empty" class="week-empty" hidden>这一周没有课，可以切换其他周次。</div>
               <div class="week-scroll">
                 <div id="week-grid" class="week-grid" aria-label="周视图"></div>
@@ -1900,7 +1901,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     selectedWeek: 1,
     activeTab: 'courses',
     busy: false,
-    toastTimer: null
+    toastTimer: null,
+    batchCollector: null,
+    batchActive: false
   };
   var lightPalette = [
     ['#756bd0', '#eeecfb'], ['#338a78', '#e8f5f1'], ['#bb7840', '#fff1e6'],
@@ -2504,6 +2507,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else dialog.setAttribute('open', '');
   }
 
+  function finishPNG(blob, name) {
+    if (blob) {
+      if (state.batchCollector) state.batchCollector.push({ blob: blob, name: name });
+      else deliverPNG(blob, name);
+    } else if (!state.batchCollector) {
+      toast('PNG 导出失败，请使用浏览器截图功能');
+    }
+  }
+
   function deliverPNG(blob, name) {
     var file = makePngFile(blob, name);
     var platform = detectPlatform();
@@ -2942,10 +2954,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     ctx.fillStyle = pngColors.footer; ctx.font = '12px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · Asia/Shanghai', margin, height - 18);
-    canvas.toBlob(function (blob) {
-      if (blob) { deliverPNG(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png'); }
-      else toast('PNG 导出失败，请使用浏览器截图功能');
-    }, 'image/png');
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) {
+        finishPNG(blob, r.semester + '-第' + state.selectedWeek + '周-16x9.png');
+        resolve(blob || null);
+      }, 'image/png');
+    });
   }
 
   function exportPhoneWeekPNG() {
@@ -3046,10 +3060,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.textAlign = 'right';
     ctx.fillText('第 ' + state.selectedWeek + ' 周', width - margin, height - 22);
     ctx.textAlign = 'left';
-    canvas.toBlob(function (blob) {
-      if (blob) { deliverPNG(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png'); }
-      else toast('PNG 导出失败，请使用浏览器截图功能');
-    }, 'image/png');
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) {
+        finishPNG(blob, r.semester + '-第' + state.selectedWeek + '周-竖屏.png');
+        resolve(blob || null);
+      }, 'image/png');
+    });
   }
 
   function posterStatCard(ctx, x, y, width, height, value, unit, label, sub, fill) {
@@ -3176,6 +3192,145 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }, 'image/png');
   }
 
+
+  var zipCrcTable = null;
+
+  function zipCrc32(data) {
+    if (!zipCrcTable) {
+      zipCrcTable = [];
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+        zipCrcTable[n] = c >>> 0;
+      }
+    }
+    var crc = 0xffffffff;
+    for (var i = 0; i < data.length; i++) crc = zipCrcTable[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  function zipDosDateTime(date) {
+    var year = Math.max(1980, date.getFullYear());
+    return {
+      time: (date.getHours() << 11) | (date.getMinutes() << 5) | (Math.floor(date.getSeconds() / 2)),
+      date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
+    };
+  }
+
+  function makeZip(files) {
+    return Promise.all(files.map(function (item) {
+      return item.blob.arrayBuffer().then(function (buffer) {
+        return { name: item.name, data: new Uint8Array(buffer) };
+      });
+    })).then(function (entries) {
+      var localParts = [];
+      var centralParts = [];
+      var offset = 0;
+      var centralSize = 0;
+      var stamp = zipDosDateTime(new Date());
+      entries.forEach(function (entry) {
+        var nameBytes = new TextEncoder().encode(entry.name);
+        var crc = zipCrc32(entry.data);
+        var local = new Uint8Array(30 + nameBytes.length);
+        var view = new DataView(local.buffer);
+        view.setUint32(0, 0x04034b50, true);
+        view.setUint16(4, 20, true);
+        view.setUint16(6, 0x0800, true);
+        view.setUint16(8, 0, true);
+        view.setUint16(10, stamp.time, true);
+        view.setUint16(12, stamp.date, true);
+        view.setUint32(14, crc, true);
+        view.setUint32(18, entry.data.length, true);
+        view.setUint32(22, entry.data.length, true);
+        view.setUint16(26, nameBytes.length, true);
+        view.setUint16(28, 0, true);
+        local.set(nameBytes, 30);
+        localParts.push(local, entry.data);
+        var localOffset = offset;
+        offset += local.length + entry.data.length;
+        var central = new Uint8Array(46 + nameBytes.length);
+        view = new DataView(central.buffer);
+        view.setUint32(0, 0x02014b50, true);
+        view.setUint16(4, 20, true);
+        view.setUint16(6, 20, true);
+        view.setUint16(8, 0x0800, true);
+        view.setUint16(10, 0, true);
+        view.setUint16(12, stamp.time, true);
+        view.setUint16(14, stamp.date, true);
+        view.setUint32(16, crc, true);
+        view.setUint32(20, entry.data.length, true);
+        view.setUint32(24, entry.data.length, true);
+        view.setUint16(28, nameBytes.length, true);
+        view.setUint16(30, 0, true);
+        view.setUint16(32, 0, true);
+        view.setUint16(34, 0, true);
+        view.setUint16(36, 0, true);
+        view.setUint32(38, 0, true);
+        view.setUint32(42, localOffset, true);
+        central.set(nameBytes, 46);
+        centralParts.push(central);
+        centralSize += central.length;
+      });
+      var centralOffset = offset;
+      var end = new Uint8Array(22);
+      var endView = new DataView(end.buffer);
+      endView.setUint32(0, 0x06054b50, true);
+      endView.setUint16(4, 0, true);
+      endView.setUint16(6, 0, true);
+      endView.setUint16(8, entries.length, true);
+      endView.setUint16(10, entries.length, true);
+      endView.setUint32(12, centralSize, true);
+      endView.setUint32(16, centralOffset, true);
+      endView.setUint16(20, 0, true);
+      return new Blob(localParts.concat(centralParts, [end]), { type: 'application/zip' });
+    });
+  }
+
+  async function exportAllWeeks() {
+    if (!state.result || state.batchActive) return;
+    var r = state.result;
+    var total = Math.max(1, Number(r.maxWeek) || 1);
+    var format = $('png-format').value === 'phone' ? 'phone' : 'wide';
+    var previousWeek = state.selectedWeek;
+    var batchButton = $('batch-button');
+    var pngButton = $('png-button');
+    var originalLabel = batchButton.textContent;
+    var files = [];
+    state.batchActive = true;
+    state.batchCollector = [];
+    batchButton.disabled = true;
+    pngButton.disabled = true;
+    setBusy(true);
+    try {
+      for (var week = 1; week <= total; week++) {
+        state.selectedWeek = week;
+        batchButton.textContent = '导出中 ' + week + '/' + total;
+        toast('正在生成第 ' + week + '/' + total + ' 周…');
+        if (format === 'phone') await exportPhoneWeekPNG();
+        else await exportWideWeekPNG();
+      }
+      files = state.batchCollector.slice();
+      if (!files.length) {
+        toast('没有生成可打包的图片');
+        return;
+      }
+      var zipName = r.semester + '-全部周-' + (format === 'phone' ? '竖屏' : '横屏') + '.zip';
+      var zip = await makeZip(files);
+      saveBlob(zip, zipName);
+      toast('已打包 ' + files.length + ' 周，ZIP 已下载');
+    } catch (error) {
+      toast('批量导出失败：' + (error && error.message ? error.message : error));
+    } finally {
+      state.batchActive = false;
+      state.batchCollector = null;
+      state.selectedWeek = previousWeek;
+      batchButton.disabled = false;
+      pngButton.disabled = false;
+      batchButton.textContent = originalLabel;
+      setBusy(false);
+    }
+  }
+
   function bindBlockEditing(container) {
     container.addEventListener('click', function (event) {
       var target = event.target.closest('[data-block-id]');
@@ -3244,6 +3399,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('download-button').addEventListener('click', downloadICS);
     $('calendar-button').addEventListener('click', addToCalendar);
     $('png-button').addEventListener('click', exportPNG);
+    $('batch-button').addEventListener('click', exportAllWeeks);
     $('png-dialog-close').addEventListener('click', closePngDialog);
     $('png-dialog-save').addEventListener('click', savePendingPng);
     $('png-dialog-share').addEventListener('click', sharePendingPng);
