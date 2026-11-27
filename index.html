@@ -2193,7 +2193,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('summary-latest').textContent = summary.latestEnd || '—';
     $('summary-earliest').textContent = summary.earliestStart ? '最早 ' + summary.earliestStart + ' 开始' : '暂无课程';
     var ranking = summary.courseRanking || [];
-    var top = ranking.slice(0, 3);
+    var top = ranking.slice(0, 5);
     var maxMinutes = top.length ? top[0].minutes : 1;
     $('course-rank-list').innerHTML = top.length ? top.map(function (course, index) {
       var width = Math.max(5, Math.round(course.minutes / maxMinutes * 100));
@@ -2674,12 +2674,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     posterStatCard(ctx, margin, 468 + cardHeight + gap, cardWidth, cardHeight, String(summary.eveningDays), '天', '晚课', '晚课率 ' + formatSummaryRate(summary.eveningRate), posterColors.soft[2]);
     posterStatCard(ctx, margin + cardWidth + gap, 468 + cardHeight + gap, cardWidth, cardHeight, String(summary.roomCount), '间', '教室', '', posterColors.soft[3]);
 
-    var ranking = (summary.courseRanking || []).slice(0, 3);
+    var ranking = (summary.courseRanking || []).slice(0, 5);
     ctx.fillStyle = posterColors.ink; ctx.font = '700 27px "Microsoft YaHei", sans-serif';
     ctx.fillText('课时最多的课', margin, 858);
     var maxMinutes = ranking.length ? ranking[0].minutes : 1;
     ranking.forEach(function (course, index) {
-      var top = 902 + index * 92;
+      var top = 902 + index * 72;
       ctx.fillStyle = index === 0 ? posterColors.primary : posterColors.muted;
       ctx.font = '700 20px "Microsoft YaHei", sans-serif';
       ctx.fillText(String(index + 1).padStart(2, '0'), margin, top + 23);
@@ -2696,32 +2696,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var lightest = summary.courseRanking && summary.courseRanking.length > 1 ? summary.courseRanking[summary.courseRanking.length - 1] : null;
     if (lightest) {
       ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif';
-      ctx.fillText('最轻松的一门：' + lightest.name + ' · ' + formatRankMinutes(lightest.minutes), margin, 1176);
+      ctx.fillText('最轻松的一门：' + lightest.name + ' · ' + formatRankMinutes(lightest.minutes), margin, 1266);
     }
 
     ctx.fillStyle = posterColors.ink; ctx.font = '700 23px "Microsoft YaHei", sans-serif';
-    ctx.fillText('最常去的教室', margin, 1248);
+    ctx.fillText('最常去的教室', margin, 1310);
     var rooms = summary.rooms.slice(0, 3);
     var roomGap = 18;
     var roomWidth = (width - margin * 2 - roomGap * 2) / 3;
     rooms.forEach(function (room, index) {
       var x = margin + index * (roomWidth + roomGap);
       ctx.fillStyle = posterColors.card;
-      roundedRect(ctx, x, 1272, roomWidth, 74, 13); ctx.fill();
+      roundedRect(ctx, x, 1334, roomWidth, 74, 13); ctx.fill();
       ctx.strokeStyle = posterColors.line; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = posterColors.ink; ctx.font = '600 18px "Microsoft YaHei", sans-serif';
-      canvasText(ctx, room.name, x + 16, 1305, roomWidth - 90, 1, 0);
+      canvasText(ctx, room.name, x + 16, 1367, roomWidth - 90, 1, 0);
       ctx.fillStyle = posterColors.primary; ctx.font = '600 15px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
-      ctx.fillText(room.visits + ' 次', x + roomWidth - 16, 1305);
+      ctx.fillText(room.visits + ' 次', x + roomWidth - 16, 1367);
       ctx.textAlign = 'left';
     });
 
     ctx.fillStyle = posterColors.ink; ctx.font = '600 20px "Microsoft YaHei", sans-serif';
-    ctx.fillText('平均每天 ' + formatRankMinutes(summary.averageMinutes), margin, 1410);
+    ctx.fillText('平均每天 ' + formatRankMinutes(summary.averageMinutes), margin, 1462);
     ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif';
-    ctx.fillText('课表日历 · 把课表变成手机日历', margin, 1460);
+    ctx.fillText('课表日历 · 把课表变成手机日历', margin, 1502);
     ctx.fillStyle = '#a8a4b8'; ctx.font = '13px "Microsoft YaHei", sans-serif';
-    ctx.fillText('Powered by 覃泰然 · 机设25-2', margin, 1495);
+    ctx.fillText('Powered by 覃泰然 · 机设25-2', margin, 1536);
 
     canvas.toBlob(function (blob) {
       if (blob) { saveBlob(blob, r.semester + '-学期总结.png'); toast('学期总结已导出'); }
