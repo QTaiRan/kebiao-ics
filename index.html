@@ -368,6 +368,13 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .summary-foot { margin: 12px 1px 0; color: var(--muted); font-size: 9px; }
 .summary-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .summary-actions .button { height: 28px; padding: 0 10px; font-size: 10px; }
+.summary-progress { margin-top: 14px; padding: 12px 15px 14px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--panel-subtle); }
+.summary-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.summary-progress-head > span:first-child { color: var(--ink-soft); font-size: 11px; font-weight: 600; letter-spacing: -.01em; }
+.summary-progress-meta { color: var(--muted); font-size: 9px; white-space: nowrap; }
+.summary-progress-meta strong { margin-left: 7px; color: var(--primary); font-size: 16px; letter-spacing: -.02em; }
+.summary-progress-track { height: 5px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: var(--line-soft); }
+.summary-progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--primary); transition: width .25s ease; }
 
 .course-rank, .room-rank { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
 .rank-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -439,12 +446,8 @@ td:last-child, th:last-child { padding-right: 20px; }
 
 .week-toolbar { padding: 12px 20px 10px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .week-heading { min-width: 0; flex: 1 1 auto; }
-.week-heading-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .week-toolbar h3 { margin: 0; font-size: 15px; }
 .week-toolbar p { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
-.week-progress-badge { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 9px; font-weight: 700; line-height: 1.5; }
-.week-progress-track { width: min(220px, 100%); height: 3px; margin-top: 6px; border-radius: 999px; overflow: hidden; background: var(--line-soft); }
-.week-progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--primary); transition: width .25s ease; }
 .week-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .week-actions select { width: auto; height: 34px; padding: 0 8px; font-size: 11px; }
 .week-empty { margin: 0 16px 12px; padding: 9px 12px; border-radius: 8px; background: var(--badge); color: var(--muted); font-size: 10px; }
@@ -717,6 +720,10 @@ td:last-child, th:last-child { padding-right: 20px; }
                   <div><h3>课时统计</h3><p id="summary-range"></p></div>
                   <div class="summary-actions"><span id="summary-instances" class="soft-badge"></span><button id="summary-export" class="button secondary small" type="button">导出总结</button></div>
                 </div>
+                <div class="summary-progress">
+                  <div class="summary-progress-head"><span>学期进度</span><span class="summary-progress-meta"><span id="summary-progress-week">第 1 / 17 周</span><strong id="summary-progress-pct">0%</strong></span></div>
+                  <div id="summary-progress-track" class="summary-progress-track" role="progressbar" aria-label="学期进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="summary-progress-fill" class="summary-progress-fill"></span></div>
+                </div>
                 <div class="summary-grid">
                   <article class="summary-card duration">
                     <span class="summary-label">本学期总上课时长</span>
@@ -771,7 +778,7 @@ td:last-child, th:last-child { padding-right: 20px; }
                 <div class="section-heading"><h3>选择周次</h3><span id="week-range-label" class="soft-badge"></span></div>
                 <div id="week-preview" class="week-preview"></div>
               </div>
-              <div class="week-toolbar"><div class="week-heading"><div class="week-heading-top"><h3 id="week-title">第 1 周</h3><span id="week-progress-pct" class="week-progress-badge">已过 0%</span></div><p id="week-dates"></p><div id="week-progress-track" class="week-progress-track" role="progressbar" aria-label="学期进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="week-progress-fill" class="week-progress-fill"></span></div></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button><button id="batch-button" class="button secondary small" type="button" title="按当前尺寸导出全部周并打包为 ZIP">导出全部周</button></div></div>
+              <div class="week-toolbar"><div class="week-heading"><h3 id="week-title">第 1 周</h3><p id="week-dates"></p></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button><button id="batch-button" class="button secondary small" type="button" title="按当前尺寸导出全部周并打包为 ZIP">导出全部周</button></div></div>
               <div id="week-empty" class="week-empty" hidden>这一周没有课，可以切换其他周次。</div>
               <div class="week-scroll">
                 <div id="week-grid" class="week-grid" aria-label="周视图"></div>
@@ -2214,6 +2221,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var summary = KB.summarizeSemester(state.result, state.calendar.firstMonday);
     $('summary-range').textContent = (summary.maxWeek > 1 ? '第 1–' + summary.maxWeek + ' 周' : '第 1 周');
     $('summary-instances').textContent = summary.instanceCount + ' 个课程实例';
+    var progress = semesterProgressInfo(summary.maxWeek);
+    $('summary-progress-pct').textContent = progress.percent + '%';
+    $('summary-progress-week').textContent = '第 ' + progress.week + ' / ' + summary.maxWeek + ' 周';
+    $('summary-progress-fill').style.width = progress.percent + '%';
+    $('summary-progress-track').setAttribute('aria-valuenow', String(progress.percent));
+    $('summary-progress-track').setAttribute('aria-valuetext', '第 ' + progress.week + ' / ' + summary.maxWeek + ' 周，已过 ' + progress.percent + '%');
     $('summary-duration').textContent = formatSummaryMinutes(summary.totalMinutes);
     $('summary-days').textContent = summary.classDays;
     $('summary-days-rate').textContent = '共 ' + summary.totalDays + ' 天，占 ' + formatSummaryRate(summary.classDayRate);
@@ -2331,6 +2344,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return d;
   }
   function shortDate(d) { return (d.getUTCMonth() + 1) + '/' + d.getUTCDate(); }
+
+  function semesterProgressInfo(totalWeeks) {
+    var total = Math.max(1, Number(totalWeeks) || 1);
+    var parts = String(state.calendar.firstMonday || '').split('-');
+    var start = parts.length === 3 ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) : null;
+    if (!start || isNaN(start.getTime())) return { week: 1, percent: 0 };
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var elapsedDays = Math.floor((today - start) / 86400000);
+    var totalDays = total * 7;
+    var elapsed = Math.max(0, Math.min(totalDays, elapsedDays));
+    return {
+      week: Math.max(1, Math.min(total, Math.floor(elapsed / 7) + 1)),
+      percent: Math.max(0, Math.min(100, Math.round(elapsed / totalDays * 100)))
+    };
+  }
   function toMinutes(value) { return Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5)); }
 
   function layoutEvents(events) {
@@ -2388,13 +2417,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var periodRows = new Map(periods.map(function (p, index) { return [p.n, index + 1]; }));
     var rowTemplate = 'repeat(' + periods.length + ',var(--week-row-height))';
     var totalWeeks = Math.max(1, Number(r.maxWeek) || 1);
-    var progress = Math.max(0, Math.min(100, Math.round((week - 1) / totalWeeks * 100)));
     $('week-title').textContent = '第 ' + week + ' 周 · ' + active.length + ' 个课时块';
     $('week-dates').textContent = shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · 第 ' + week + ' / ' + totalWeeks + ' 周';
-    $('week-progress-pct').textContent = '已过 ' + progress + '%';
-    $('week-progress-fill').style.width = progress + '%';
-    $('week-progress-track').setAttribute('aria-valuenow', String(progress));
-    $('week-progress-track').setAttribute('aria-valuetext', '第 ' + week + ' / ' + totalWeeks + ' 周，已过 ' + progress + '%');
     $('week-empty').hidden = active.length > 0;
     var conflictIDs = new Set();
     r.conflicts.filter(function (c) { return c.week === week; }).forEach(function (c) { conflictIDs.add(c.a); conflictIDs.add(c.b); });
@@ -3134,6 +3158,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!state.result || !state.calendar) return;
     var r = state.result;
     var summary = KB.summarizeSemester(r, state.calendar.firstMonday);
+    var progress = semesterProgressInfo(summary.maxWeek);
     var width = 1080;
     var height = 1560;
     var margin = 84;
@@ -3157,7 +3182,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ctx.fillStyle = posterColors.ink; ctx.font = '700 20px "Microsoft YaHei", sans-serif';
     ctx.fillText('课表日历 · 学期总结', margin, 106);
     ctx.fillStyle = posterColors.muted; ctx.font = '16px "Microsoft YaHei", sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(r.semester + ' · 第 1–' + summary.maxWeek + ' 周', width - margin, 106);
+    ctx.fillText(r.semester + ' · 第 ' + progress.week + ' / ' + summary.maxWeek + ' 周 · 已过 ' + progress.percent + '%', width - margin, 106);
     ctx.textAlign = 'left';
 
     ctx.fillStyle = posterColors.muted; ctx.font = '19px "Microsoft YaHei", sans-serif';
