@@ -438,8 +438,13 @@ td:last-child, th:last-child { padding-right: 20px; }
 .detail-time { color: var(--muted); font-size: 9px; white-space: nowrap; }
 
 .week-toolbar { padding: 12px 20px 10px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.week-heading { min-width: 0; flex: 1 1 auto; }
+.week-heading-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .week-toolbar h3 { margin: 0; font-size: 15px; }
 .week-toolbar p { margin: 2px 0 0; color: var(--muted); font-size: 10px; }
+.week-progress-badge { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 9px; font-weight: 700; line-height: 1.5; }
+.week-progress-track { width: min(220px, 100%); height: 3px; margin-top: 6px; border-radius: 999px; overflow: hidden; background: var(--line-soft); }
+.week-progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--primary); transition: width .25s ease; }
 .week-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .week-actions select { width: auto; height: 34px; padding: 0 8px; font-size: 11px; }
 .week-empty { margin: 0 16px 12px; padding: 9px 12px; border-radius: 8px; background: var(--badge); color: var(--muted); font-size: 10px; }
@@ -468,7 +473,12 @@ td:last-child, th:last-child { padding-right: 20px; }
 .anomaly-panel { margin: 12px 0 28px; padding: 17px 20px; }
 .anomaly-list { margin-top: 10px; }
 .anomaly-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line-soft); color: var(--amber-ink); font-size: 10px; }
+.anomaly-item.action { width: 100%; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.anomaly-item.action:hover { background: var(--primary-soft); }
+.anomaly-text { min-width: 0; flex: 1 1 auto; }
+.anomaly-jump { flex: 0 0 auto; margin-left: auto; color: var(--primary); font-size: 9px; font-weight: 700; white-space: nowrap; }
 .anomaly-item::before { content: "!"; display: grid; place-items: center; width: 16px; height: 16px; flex: 0 0 auto; border-radius: 50%; background: var(--amber-soft); color: var(--amber); font-size: 9px; font-weight: 800; }
+.week-event.anomaly-focus { z-index: 4; outline: 2px solid var(--primary); outline-offset: 2px; box-shadow: 0 0 0 5px var(--primary-soft); }
 .anomaly-none { padding: 12px 0 2px; color: var(--green); font-size: 11px; }
 
 .error-panel { position: relative; display: flex; gap: 14px; margin-bottom: 14px; padding: 19px 48px 19px 20px; border: 1px solid var(--red-line); border-radius: 14px; background: var(--red-soft); color: var(--red-ink); }
@@ -761,7 +771,7 @@ td:last-child, th:last-child { padding-right: 20px; }
                 <div class="section-heading"><h3>选择周次</h3><span id="week-range-label" class="soft-badge"></span></div>
                 <div id="week-preview" class="week-preview"></div>
               </div>
-              <div class="week-toolbar"><div><h3 id="week-title">第 1 周</h3><p id="week-dates"></p></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button><button id="batch-button" class="button secondary small" type="button" title="按当前尺寸导出全部周并打包为 ZIP">导出全部周</button></div></div>
+              <div class="week-toolbar"><div class="week-heading"><div class="week-heading-top"><h3 id="week-title">第 1 周</h3><span id="week-progress-pct" class="week-progress-badge">已过 0%</span></div><p id="week-dates"></p><div id="week-progress-track" class="week-progress-track" role="progressbar" aria-label="学期进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="week-progress-fill"></span></div></div><div class="week-actions"><select id="png-format" aria-label="导出尺寸"><option value="phone">手机竖屏 9:16</option><option value="wide">横屏 16:9</option></select><button id="png-button" class="button secondary small" type="button">导出 PNG</button><button id="batch-button" class="button secondary small" type="button" title="按当前尺寸导出全部周并打包为 ZIP">导出全部周</button></div></div>
               <div id="week-empty" class="week-empty" hidden>这一周没有课，可以切换其他周次。</div>
               <div class="week-scroll">
                 <div id="week-grid" class="week-grid" aria-label="周视图"></div>
@@ -2377,8 +2387,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var periods = displayPeriods();
     var periodRows = new Map(periods.map(function (p, index) { return [p.n, index + 1]; }));
     var rowTemplate = 'repeat(' + periods.length + ',var(--week-row-height))';
+    var totalWeeks = Math.max(1, Number(r.maxWeek) || 1);
+    var progress = Math.max(0, Math.min(100, Math.round((week - 1) / totalWeeks * 100)));
     $('week-title').textContent = '第 ' + week + ' 周 · ' + active.length + ' 个课时块';
-    $('week-dates').textContent = shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6));
+    $('week-dates').textContent = shortDate(dateAt(0)) + ' — ' + shortDate(dateAt(6)) + ' · 第 ' + week + ' / ' + totalWeeks + ' 周';
+    $('week-progress-pct').textContent = '已过 ' + progress + '%';
+    $('week-progress-fill').style.width = progress + '%';
+    $('week-progress-track').setAttribute('aria-valuenow', String(progress));
+    $('week-progress-track').setAttribute('aria-valuetext', '第 ' + week + ' / ' + totalWeeks + ' 周，已过 ' + progress + '%');
     $('week-empty').hidden = active.length > 0;
     var conflictIDs = new Set();
     r.conflicts.filter(function (c) { return c.week === week; }).forEach(function (c) { conflictIDs.add(c.a); conflictIDs.add(c.b); });
@@ -2429,11 +2445,42 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }).join('');
   }
 
+  function locateAnomalyBlock(blockId) {
+    var block = state.result.blocks.filter(function (b) { return b.id === blockId; })[0];
+    if (!block) {
+      toast('没有找到对应的课程块');
+      return;
+    }
+    var week = state.selectedWeek;
+    if (block.weeks.indexOf(week) < 0) week = block.weeks[0] || 1;
+    state.selectedWeek = week;
+    renderWeekPreview();
+    renderWeekView();
+    switchTab('week');
+    toast('已定位到第 ' + week + ' 周');
+    setTimeout(function () {
+      var card = null;
+      Array.from($('week-grid').querySelectorAll('[data-block-id]')).some(function (item) {
+        if (item.dataset.blockId !== blockId) return false;
+        card = item;
+        return true;
+      });
+      if (card) {
+        if (typeof card.scrollIntoView === 'function') card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        card.classList.add('anomaly-focus');
+        setTimeout(function () { card.classList.remove('anomaly-focus'); }, 2200);
+      }
+      setTimeout(function () { openBlockEditor(blockId); }, 450);
+    }, 0);
+  }
+
   function renderAnomalies() {
     var anomalies = state.result.anomalies;
     $('anomaly-count').textContent = anomalies.length + ' 条';
     $('anomaly-list').innerHTML = anomalies.length ? anomalies.map(function (item) {
-      return '<div class="anomaly-item">' + escapeHTML(item.message || item) + '</div>';
+      var message = escapeHTML(item.message || item);
+      if (!item || !item.blockId) return '<div class="anomaly-item"><span class="anomaly-text">' + message + '</span></div>';
+      return '<button type="button" class="anomaly-item action" data-anomaly-block-id="' + escapeHTML(item.blockId) + '"><span class="anomaly-text">' + message + '</span><span class="anomaly-jump">定位并修改</span></button>';
     }).join('') : '<div class="anomaly-none">没有发现格式、周次或地点异常。</div>';
   }
 
@@ -3390,6 +3437,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('restore-button').addEventListener('click', restoreOriginal);
     bindBlockEditing($('details-body'));
     bindBlockEditing($('week-grid'));
+    $('anomaly-list').addEventListener('click', function (event) {
+      var target = event.target.closest('[data-anomaly-block-id]');
+      if (target) locateAnomalyBlock(target.dataset.anomalyBlockId);
+    });
     $('block-editor-form').addEventListener('submit', saveBlock);
     $('editor-close').addEventListener('click', closeBlockEditor);
     $('editor-cancel').addEventListener('click', closeBlockEditor);
