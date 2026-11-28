@@ -2054,7 +2054,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     add('VTIMEZONE', /BEGIN:VTIMEZONE\r\n[\s\S]*?TZID:Asia\/Shanghai/.test(calendar.ics), 'Asia/Shanghai，UTC+08:00');
     var physicalLines = calendar.ics.split('\r\n');
     add('75 字节折行', physicalLines.every(function (line) { return utf8Length(line) <= 75; }), '所有物理行不超过 75 字节');
-    add('DESCRIPTION 两行', calendar.events.length > 0 && calendar.ics.indexOf('DESCRIPTION:') >= 0, '仅教师与周次两项');
+    add('课程 DESCRIPTION 两行', calendar.events.length > 0 && calendar.ics.indexOf('DESCRIPTION:') >= 0, '课程事件仅教师与周次两项');
     if (result.remarks && result.remarks.length) {
       add('备注课程写成全天日程', calendar.remarkEventCount === calendar.remarkEvents.length && calendar.remarkEventCount > 0, result.remarks.length + ' 门，' + calendar.remarkEventCount + ' 个跨周全天日程');
     }
