@@ -388,6 +388,13 @@ select { width: 100%; border: 1px solid var(--input-line); border-radius: 9px; b
 .rank-track { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 999px; background: var(--line-soft); }
 .rank-fill { height: 100%; border-radius: 999px; background: var(--primary); }
 .rank-foot { margin: 10px 0 0; color: var(--muted); font-size: 9px; }
+.remark-courses { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
+.remark-list { display: grid; gap: 7px; margin-top: 10px; }
+.remark-item { display: flex; align-items: flex-start; gap: 9px; padding: 9px 10px; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--panel-subtle); }
+.remark-type { flex: 0 0 auto; padding: 2px 6px; border-radius: 5px; background: var(--primary-soft); color: var(--primary); font-size: 9px; font-weight: 600; line-height: 1.6; white-space: nowrap; }
+.remark-body { min-width: 0; }
+.remark-body strong { display: block; color: var(--ink-soft); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.remark-body small { display: block; margin-top: 1px; color: var(--muted); font-size: 9px; line-height: 1.5; overflow-wrap: anywhere; }
 
 .week-picker { padding: 14px 20px 2px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
@@ -765,6 +772,11 @@ td:last-child, th:last-child { padding-right: 20px; }
                   <div id="room-rank-list" class="rank-list"></div>
                   <p id="room-rank-foot" class="rank-foot"></p>
                 </div>
+                <div id="remark-courses" class="remark-courses" hidden>
+                  <div class="rank-head"><h4>备注课程</h4><span id="remark-count"></span></div>
+                  <div id="remark-list" class="remark-list"></div>
+                  <p class="rank-foot">备注里只有课程名和周次，没有具体节次；这里单独列出，不写入日历。</p>
+                </div>
               </div>
             </div>
 
@@ -1107,6 +1119,113 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return { name: m[1].trim(), code: m[2].trim(), teacher: m[3].trim(), location: cleanLocation(m[5]), weeksRaw: m[4].trim(), raw: segment };
   }
 
+  function splitRemarkParts(value) {
+    var parts = [];
+    var buffer = '';
+    var depth = 0;
+    String(value).split('').forEach(function (ch) {
+      if (ch === '（' || ch === '(') depth++;
+      else if (ch === '）' || ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /[,，、;；]/.test(ch)) {
+        if (buffer.trim()) parts.push(buffer.trim());
+        buffer = '';
+      } else {
+        buffer += ch;
+      }
+    });
+    if (buffer.trim()) parts.push(buffer.trim());
+    return parts;
+  }
+
+  function parseRemarkEntry(value) {
+    var raw = text(value).trim();
+    var type = '';
+    var body = raw;
+    var prefix = raw.match(/^([^:：]{1,12})[:：]\s*(.+)$/);
+    if (prefix) {
+      type = prefix[1].trim();
+      body = prefix[2].trim();
+    }
+    var teacher = '';
+    var weeksRaw = '';
+    var weeks = [];
+    var bracket = body.match(/^(.+?)【([^】]+)】$/);
+    if (bracket) {
+      body = bracket[1].trim();
+      var detail = bracket[2].trim();
+      var teachers = [];
+      var ranges = [];
+      splitRemarkParts(detail).forEach(function (item) {
+        if (!item) return;
+        var pm = item.match(/^(.+?)[（(]([^（）()]*)[）)]$/);
+        if (pm && /(?:周|单|双|\d)/.test(pm[2])) {
+          teachers.push(pm[1].trim());
+          ranges.push(pm[2].trim());
+        } else {
+          teachers.push(item);
+        }
+      });
+      teacher = teachers.filter(Boolean).join('、');
+      weeksRaw = ranges.join(',');
+      if (weeksRaw) weeks = parseWeeks(weeksRaw).weeks;
+    }
+    return { type: type, name: body, teacher: teacher, weeks: weeks, weeksRaw: weeksRaw, raw: raw };
+  }
+
+  function extractRemarks(rows, header) {
+    var items = [];
+    var seen = new Map();
+    var firstDayCol = Math.min.apply(null, Object.keys(header.dayCols).map(function (key) { return Number(header.dayCols[key]); }));
+    for (var r = header.row + 1; r < rows.length; r++) {
+      var row = rows[r] || [];
+      var isRemark = false;
+      for (var c = 0; c < firstDayCol; c++) {
+        var label = compact(row[c]);
+        if (/^(备注|说明|备注课程|课程备注)$/.test(label) || /^备注[:：]/.test(label)) { isRemark = true; break; }
+      }
+      if (!isRemark) continue;
+      var cells = [];
+      Object.keys(header.dayCols).forEach(function (dayKey) {
+        var raw = text(row[header.dayCols[dayKey]]).trim();
+        if (raw) cells.push({ day: Number(dayKey), raw: raw });
+      });
+      if (!cells.length) continue;
+      var groups = [];
+      var groupByRaw = new Map();
+      cells.forEach(function (cell) {
+        if (!groupByRaw.has(cell.raw)) {
+          var group = { days: [], raw: cell.raw };
+          groupByRaw.set(cell.raw, group);
+          groups.push(group);
+        }
+        groupByRaw.get(cell.raw).days.push(cell.day);
+      });
+      var distinctTexts = groups.length;
+      groups.forEach(function (group) {
+        var days = distinctTexts === 1 ? [] : group.days;
+        group.raw.split(/[;；]+/).forEach(function (entryRaw) {
+          var entry = entryRaw.trim();
+          if (!entry) return;
+          var item = parseRemarkEntry(entry);
+          var key = [item.type, item.name, item.teacher, item.weeksRaw, days.join(',')].join('|');
+          if (seen.has(key)) return;
+          seen.set(key, true);
+          items.push({
+            type: item.type,
+            name: item.name,
+            teacher: item.teacher,
+            weeks: item.weeks,
+            weeksRaw: item.weeksRaw,
+            days: days,
+            raw: item.raw,
+            sourceRow: r + 1
+          });
+        });
+      });
+    }
+    return items;
+  }
+
   function looksLikeCode(value) {
     return /^(?:\([^)]*\))?[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)+$/.test(value);
   }
@@ -1296,6 +1415,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var instances = blocks.reduce(function (sum, b) { return sum + b.weeks.length; }, 0);
     result.stats = result.stats || {};
     result.stats.courses = result.courses.length;
+    result.stats.remarks = (result.remarks || []).length;
     result.stats.blocks = blocks.length;
     result.stats.instances = instances;
     result.stats.events = instances;
@@ -1409,6 +1529,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var header = findHeader(rows);
     var monday = normalizeMonday(options.firstMonday || DEFAULT_MONDAY);
     var semester = detectSemester(rows, header.row, monday.date);
+    var remarks = extractRemarks(rows, header);
     var anomalies = [];
     var periods = [];
     var periodMap = new Map();
@@ -1560,11 +1681,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       segments: segments,
       blocks: blocks,
       courses: courses,
+      remarks: remarks,
       conflicts: conflicts,
       anomalies: anomalies,
       maxWeek: maxWeek,
       stats: {
         courses: courses.length,
+        remarks: remarks.length,
         rawSegments: rawSegmentCount,
         segments: rawSegmentCount,
         uniqueSegments: segments.length,
@@ -1871,6 +1994,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var physicalLines = calendar.ics.split('\r\n');
     add('75 字节折行', physicalLines.every(function (line) { return utf8Length(line) <= 75; }), '所有物理行不超过 75 字节');
     add('DESCRIPTION 两行', calendar.events.length > 0 && calendar.ics.indexOf('DESCRIPTION:') >= 0, '仅教师与周次两项');
+    if (result.remarks && result.remarks.length) {
+      add('备注课程已单列', true, '备注中 ' + result.remarks.length + ' 门未排节次，未写入日历');
+    }
     return checks;
   }
 
@@ -2255,6 +2381,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return '<div class="rank-row"><span class="rank-no">' + (index + 1) + '</span><span class="rank-name" title="' + escapeHTML(room.name) + '">' + escapeHTML(room.name) + '</span><span class="rank-time">' + room.visits + ' 次</span><div class="rank-track"><div class="rank-fill" style="width:' + width + '%"></div></div></div>';
     }).join('') : '<span class="summary-empty">暂无教室信息</span>';
     $('room-rank-foot').textContent = summary.roomCount > 5 ? '共 ' + summary.roomCount + ' 间教室' : '';
+    var remarks = state.result.remarks || [];
+    $('remark-courses').hidden = !remarks.length;
+    $('remark-count').textContent = remarks.length ? remarks.length + ' 门' : '';
+    $('remark-list').innerHTML = remarks.length ? remarks.map(function (item) {
+      var type = (item.type || '备注').replace(/课程$/, '');
+      var meta = [];
+      if (item.days && item.days.length) meta.push(item.days.map(function (day) { return WEEK_NAMES[day].replace('星期', '周'); }).join('、'));
+      if (item.teacher) meta.push(item.teacher);
+      meta.push(item.weeks && item.weeks.length ? KB.formatWeeks(item.weeks) : (item.weeksRaw || '周次未写'));
+      return '<div class="remark-item" title="' + escapeHTML(item.raw) + '"><span class="remark-type">' + escapeHTML(type) + '</span><div class="remark-body"><strong>' + escapeHTML(item.name) + '</strong><small>' + escapeHTML(meta.join(' · ')) + '</small></div></div>';
+    }).join('') : '';
   }
 
   function renderDetails() {
