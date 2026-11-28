@@ -775,7 +775,7 @@ td:last-child, th:last-child { padding-right: 20px; }
                 <div id="remark-courses" class="remark-courses" hidden>
                   <div class="rank-head"><h4>备注课程</h4><span id="remark-count"></span></div>
                   <div id="remark-list" class="remark-list"></div>
-                  <p class="rank-foot">备注里只有课程名和周次，没有具体节次；这里单独列出，不写入日历。</p>
+                  <p class="rank-foot">备注里只有课程名和周次，没有具体节次；会按连续周次写成横跨的全天日程。</p>
                 </div>
               </div>
             </div>
@@ -1743,17 +1743,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return selected;
   }
 
-  function formatWeeks(weeks) {
-    if (!weeks || !weeks.length) return '';
+  function weekRuns(weeks) {
+    if (!weeks || !weeks.length) return [];
     var runs = [];
     var start = weeks[0];
     var prev = weeks[0];
     for (var i = 1; i < weeks.length; i++) {
       if (weeks[i] === prev + 1) { prev = weeks[i]; continue; }
-      runs.push(start === prev ? String(start) : start + '-' + prev);
+      runs.push([start, prev]);
       start = prev = weeks[i];
     }
-    runs.push(start === prev ? String(start) : start + '-' + prev);
+    runs.push([start, prev]);
+    return runs;
+  }
+
+  function formatWeeks(weeks) {
+    if (!weeks || !weeks.length) return '';
+    var runs = weekRuns(weeks).map(function (run) {
+      return run[0] === run[1] ? String(run[0]) : run[0] + '-' + run[1];
+    });
     return '第' + runs.join(',') + '周';
   }
 
@@ -1866,6 +1874,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       'END:VTIMEZONE'
     ];
     var events = [];
+    var courseEvents = [];
+    var remarkEvents = [];
     var usedUIDs = new Set();
 
     function uniqueUID(base) {
@@ -1907,7 +1917,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           lines.push('SEQUENCE:0');
           addAlarm();
           lines.push('END:VEVENT');
-          events.push(eventObject(block, week, date, uid));
+          courseEvents.push(eventObject(block, week, date, uid));
         });
       } else {
         var firstWeek = block.weeks[0];
@@ -1938,10 +1948,57 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         lines.push('END:VEVENT');
         block.weeks.forEach(function (week) {
           var date = addDays(monday, (week - 1) * 7 + block.day);
-          events.push(eventObject(block, week, date, uid));
+          courseEvents.push(eventObject(block, week, date, uid));
         });
       }
     });
+
+    var courseEventCount = usedUIDs.size;
+    (result.remarks || []).forEach(function (item, remarkIndex) {
+      weekRuns(item.weeks).forEach(function (run) {
+        var startDate = addDays(monday, (run[0] - 1) * 7);
+        var endDate = addDays(monday, run[1] * 7);
+        var typeLabel = text(item.type).replace(/课程$/, '');
+        var summary = text(item.name) + (typeLabel ? '（' + typeLabel + '）' : '');
+        var description = [];
+        if (item.type) description.push('类型：' + item.type);
+        if (item.teacher) description.push('教师：' + item.teacher);
+        description.push('周次：' + formatWeeks(item.weeks));
+        var uid = uniqueUID([semester, 'REMARK', item.type, item.name, item.teacher, run[0], run[1]].join('|'));
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:' + uid);
+        lines.push('DTSTAMP:' + stamp);
+        lines.push('DTSTART;VALUE=DATE:' + compactDate(startDate));
+        lines.push('DTEND;VALUE=DATE:' + compactDate(endDate));
+        lines.push('SUMMARY:' + escapeText(summary));
+        lines.push('DESCRIPTION:' + escapeText(description.join('\n')));
+        lines.push('STATUS:CONFIRMED');
+        lines.push('TRANSP:OPAQUE');
+        lines.push('SEQUENCE:0');
+        lines.push('END:VEVENT');
+        remarkEvents.push({
+          uid: uid,
+          blockId: 'remark-' + remarkIndex,
+          type: item.type,
+          name: item.name,
+          summary: summary,
+          teacher: item.teacher,
+          location: '',
+          weeks: item.weeks.slice(),
+          startWeek: run[0],
+          endWeek: run[1],
+          date: isoDate(startDate),
+          endDate: isoDate(endDate),
+          start: '00:00',
+          end: '00:00',
+          startPeriod: 0,
+          endPeriod: 0,
+          allDay: true,
+          remark: true
+        });
+      });
+    });
+    events = courseEvents.concat(remarkEvents);
 
     events.sort(function (a, b) {
       return a.date.localeCompare(b.date) || a.start.localeCompare(b.start) || a.startPeriod - b.startPeriod ||
@@ -1951,8 +2008,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return {
       ics: ics,
       events: events,
+      courseEvents: courseEvents,
+      remarkEvents: remarkEvents,
       eventCount: usedUIDs.size,
-      instanceCount: events.length,
+      courseEventCount: courseEventCount,
+      remarkEventCount: remarkEvents.length,
+      instanceCount: courseEvents.length,
       uids: Array.from(usedUIDs),
       firstMonday: mondayInfo.date,
       mondayAdjusted: mondayInfo.adjusted,
@@ -1995,7 +2056,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     add('75 字节折行', physicalLines.every(function (line) { return utf8Length(line) <= 75; }), '所有物理行不超过 75 字节');
     add('DESCRIPTION 两行', calendar.events.length > 0 && calendar.ics.indexOf('DESCRIPTION:') >= 0, '仅教师与周次两项');
     if (result.remarks && result.remarks.length) {
-      add('备注课程已单列', true, '备注中 ' + result.remarks.length + ' 门未排节次，未写入日历');
+      add('备注课程写成全天日程', calendar.remarkEventCount === calendar.remarkEvents.length && calendar.remarkEventCount > 0, result.remarks.length + ' 门，' + calendar.remarkEventCount + ' 个跨周全天日程');
     }
     return checks;
   }
@@ -2382,8 +2443,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }).join('') : '<span class="summary-empty">暂无教室信息</span>';
     $('room-rank-foot').textContent = summary.roomCount > 5 ? '共 ' + summary.roomCount + ' 间教室' : '';
     var remarks = state.result.remarks || [];
+    var remarkEventCount = state.calendar && state.calendar.remarkEventCount || 0;
     $('remark-courses').hidden = !remarks.length;
-    $('remark-count').textContent = remarks.length ? remarks.length + ' 门' : '';
+    $('remark-count').textContent = remarks.length ? remarks.length + ' 门 · ' + remarkEventCount + ' 个全天日程' : '';
     $('remark-list').innerHTML = remarks.length ? remarks.map(function (item) {
       var type = (item.type || '备注').replace(/课程$/, '');
       var meta = [];
@@ -2597,7 +2659,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     checks.push({ name: '异常显式汇总', ok: true, detail: state.result.anomalies.length + ' 条“需要留意”' });
     if (state.calendar.reminderMinutes) {
       var alarmCount = (state.calendar.ics.match(/BEGIN:VALARM/g) || []).length;
-      checks.push({ name: 'VALARM 课前提醒', ok: alarmCount === state.calendar.eventCount, detail: alarmCount + ' 条，提前 ' + state.calendar.reminderMinutes + ' 分钟' });
+      checks.push({ name: 'VALARM 课前提醒', ok: alarmCount === (state.calendar.courseEventCount || state.calendar.eventCount), detail: alarmCount + ' 条，提前 ' + state.calendar.reminderMinutes + ' 分钟' });
     }
     var passed = checks.filter(function (c) { return c.ok; }).length;
     $('check-summary').textContent = passed + ' / ' + checks.length + ' 通过';
